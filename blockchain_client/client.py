@@ -109,7 +109,8 @@ class BlockchainClient:
             gas_estimate = self.web3.eth.estimate_gas(transaction)
             transaction["gas"] = int(gas_estimate * 1.2)
             signed = self.account.sign_transaction(transaction)
-            tx_hash = self.web3.eth.send_raw_transaction(signed.raw_transaction)
+            raw_transaction = getattr(signed, "raw_transaction", signed.rawTransaction)
+            tx_hash = self.web3.eth.send_raw_transaction(raw_transaction)
             receipt = cast(
                 Any,
                 self.web3.eth.wait_for_transaction_receipt(

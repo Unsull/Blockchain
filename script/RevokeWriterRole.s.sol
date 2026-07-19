@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Script} from "forge-std/Script.sol";
-import {EvidenceRegistry} from "../contracts/EvidenceRegistry.sol";
+import { Script } from "forge-std/Script.sol";
+import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
 
 contract RevokeWriterRole is Script {
     function run() external {

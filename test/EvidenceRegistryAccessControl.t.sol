@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {EvidenceRegistry} from "../contracts/EvidenceRegistry.sol";
+import { Test } from "forge-std/Test.sol";
+import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
 
 contract EvidenceRegistryAccessControlTest is Test {
     EvidenceRegistry internal registry;
@@ -17,25 +17,28 @@ contract EvidenceRegistryAccessControlTest is Test {
     }
 
     function testAdminCanGrantAndRevokeWriter() public {
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.prank(admin);
-        registry.grantRole(registry.WRITER_ROLE(), writer);
-        assertTrue(registry.hasRole(registry.WRITER_ROLE(), writer));
+        registry.grantRole(writerRole, writer);
+        assertTrue(registry.hasRole(writerRole, writer));
 
         vm.prank(admin);
-        registry.revokeRole(registry.WRITER_ROLE(), writer);
-        assertFalse(registry.hasRole(registry.WRITER_ROLE(), writer));
+        registry.revokeRole(writerRole, writer);
+        assertFalse(registry.hasRole(writerRole, writer));
     }
 
     function testNonAdminCannotGrantRole() public {
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.prank(writer);
         vm.expectRevert();
-        registry.grantRole(registry.WRITER_ROLE(), writer);
+        registry.grantRole(writerRole, writer);
     }
 
     function testRevokedWriterCannotWrite() public {
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.startPrank(admin);
-        registry.grantRole(registry.WRITER_ROLE(), writer);
-        registry.revokeRole(registry.WRITER_ROLE(), writer);
+        registry.grantRole(writerRole, writer);
+        registry.revokeRole(writerRole, writer);
         vm.stopPrank();
 
         vm.prank(writer);
@@ -44,8 +47,9 @@ contract EvidenceRegistryAccessControlTest is Test {
     }
 
     function testPauserCanPauseAndUnpause() public {
+        bytes32 pauserRole = registry.PAUSER_ROLE();
         vm.prank(admin);
-        registry.grantRole(registry.PAUSER_ROLE(), pauser);
+        registry.grantRole(pauserRole, pauser);
 
         vm.prank(pauser);
         registry.pause();
@@ -63,8 +67,9 @@ contract EvidenceRegistryAccessControlTest is Test {
     }
 
     function testPausedContractRejectsWrites() public {
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.startPrank(admin);
-        registry.grantRole(registry.WRITER_ROLE(), writer);
+        registry.grantRole(writerRole, writer);
         registry.pause();
         vm.stopPrank();
 

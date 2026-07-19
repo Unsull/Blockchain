@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {IEvidenceRegistry} from "./interfaces/IEvidenceRegistry.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { IEvidenceRegistry } from "./interfaces/IEvidenceRegistry.sol";
 
 contract EvidenceRegistry is IEvidenceRegistry, AccessControl, Pausable {
     bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
@@ -18,30 +18,28 @@ contract EvidenceRegistry is IEvidenceRegistry, AccessControl, Pausable {
         _grantRole(PAUSER_ROLE, admin);
     }
 
-    function recordEvidence(
-        bytes32 evidenceRef,
-        bytes32 staticHash
-    ) external onlyRole(WRITER_ROLE) whenNotPaused {
+    function recordEvidence(bytes32 evidenceRef, bytes32 staticHash)
+        external
+        onlyRole(WRITER_ROLE)
+        whenNotPaused
+    {
         if (evidenceRef == bytes32(0)) revert InvalidEvidenceRef();
         if (staticHash == bytes32(0)) revert InvalidStaticHash();
         if (evidenceRecords[evidenceRef].exists) revert EvidenceAlreadyExists(evidenceRef);
 
         uint64 recordedAt = _currentTimestamp();
         evidenceRecords[evidenceRef] = EvidenceRecord({
-            staticHash: staticHash,
-            recordedAt: recordedAt,
-            writer: msg.sender,
-            exists: true
+            staticHash: staticHash, recordedAt: recordedAt, writer: msg.sender, exists: true
         });
 
         emit EvidenceRecorded(evidenceRef, staticHash, recordedAt, msg.sender);
     }
 
-    function recordAccess(
-        bytes32 evidenceRef,
-        bytes32 officerRef,
-        bytes32 accessSessionRef
-    ) external onlyRole(WRITER_ROLE) whenNotPaused {
+    function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef)
+        external
+        onlyRole(WRITER_ROLE)
+        whenNotPaused
+    {
         if (evidenceRef == bytes32(0)) revert InvalidEvidenceRef();
         if (officerRef == bytes32(0)) revert InvalidOfficerRef();
         if (accessSessionRef == bytes32(0)) revert InvalidAccessSessionRef();
@@ -58,20 +56,26 @@ contract EvidenceRegistry is IEvidenceRegistry, AccessControl, Pausable {
             writer: msg.sender
         });
 
-        emit EvidenceAccessRecorded(evidenceRef, officerRef, accessSessionRef, recordedAt, msg.sender);
+        emit EvidenceAccessRecorded(
+            evidenceRef, officerRef, accessSessionRef, recordedAt, msg.sender
+        );
     }
 
-    function getEvidence(
-        bytes32 evidenceRef
-    ) external view returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists) {
+    function getEvidence(bytes32 evidenceRef)
+        external
+        view
+        returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists)
+    {
         EvidenceRecord memory record = evidenceRecords[evidenceRef];
         if (!record.exists) revert EvidenceNotFound(evidenceRef);
         return (record.staticHash, record.recordedAt, record.writer, record.exists);
     }
 
-    function getAccessBySession(
-        bytes32 accessSessionRef
-    ) external view returns (bytes32 evidenceRef, bytes32 officerRef, uint64 recordedAt, address writer) {
+    function getAccessBySession(bytes32 accessSessionRef)
+        external
+        view
+        returns (bytes32 evidenceRef, bytes32 officerRef, uint64 recordedAt, address writer)
+    {
         AccessRecord memory record = accessRecords[accessSessionRef];
         if (record.recordedAt == 0) revert AccessSessionNotFound(accessSessionRef);
         return (record.evidenceRef, record.officerRef, record.recordedAt, record.writer);

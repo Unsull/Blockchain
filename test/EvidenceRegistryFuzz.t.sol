@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {EvidenceRegistry} from "../contracts/EvidenceRegistry.sol";
-import {IEvidenceRegistry} from "../contracts/interfaces/IEvidenceRegistry.sol";
+import { Test } from "forge-std/Test.sol";
+import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { IEvidenceRegistry } from "../contracts/interfaces/IEvidenceRegistry.sol";
 
 contract EvidenceRegistryFuzzTest is Test {
     EvidenceRegistry internal registry;
@@ -12,8 +12,9 @@ contract EvidenceRegistryFuzzTest is Test {
 
     function setUp() public {
         registry = new EvidenceRegistry(admin);
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.prank(admin);
-        registry.grantRole(registry.WRITER_ROLE(), writer);
+        registry.grantRole(writerRole, writer);
     }
 
     function testFuzzRecordEvidence(bytes32 evidenceRef, bytes32 staticHash) public {

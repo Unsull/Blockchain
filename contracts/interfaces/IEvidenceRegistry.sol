@@ -27,10 +27,7 @@ interface IEvidenceRegistry {
     error AccessSessionNotFound(bytes32 accessSessionRef);
 
     event EvidenceRecorded(
-        bytes32 indexed evidenceRef,
-        bytes32 staticHash,
-        uint64 recordedAt,
-        address indexed writer
+        bytes32 indexed evidenceRef, bytes32 staticHash, uint64 recordedAt, address indexed writer
     );
 
     event EvidenceAccessRecorded(
@@ -43,19 +40,18 @@ interface IEvidenceRegistry {
 
     function recordEvidence(bytes32 evidenceRef, bytes32 staticHash) external;
 
-    function recordAccess(
-        bytes32 evidenceRef,
-        bytes32 officerRef,
-        bytes32 accessSessionRef
-    ) external;
+    function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef)
+        external;
 
-    function getEvidence(
-        bytes32 evidenceRef
-    ) external view returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists);
+    function getEvidence(bytes32 evidenceRef)
+        external
+        view
+        returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists);
 
-    function getAccessBySession(
-        bytes32 accessSessionRef
-    ) external view returns (bytes32 evidenceRef, bytes32 officerRef, uint64 recordedAt, address writer);
+    function getAccessBySession(bytes32 accessSessionRef)
+        external
+        view
+        returns (bytes32 evidenceRef, bytes32 officerRef, uint64 recordedAt, address writer);
 
     function evidenceExists(bytes32 evidenceRef) external view returns (bool);
 

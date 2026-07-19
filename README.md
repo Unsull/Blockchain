@@ -70,10 +70,13 @@ OpenZeppelin `Pausable` emits standard `Paused` and `Unpaused` events.
 ## Compile
 
 ```powershell
-forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
-forge install foundry-rs/forge-std@v1.9.4 --no-commit
+forge install OpenZeppelin/openzeppelin-contracts@v5.0.2
+forge install foundry-rs/forge-std@v1.9.4
 forge build
 ```
+
+Forge `1.7.1` no longer supports `--no-commit`. The default install behavior
+does not create a commit unless `--commit` is provided.
 
 ## Test
 
@@ -177,6 +180,116 @@ verification, and chain state queries.
 The contract uses custom errors for invalid zero values, duplicates, missing
 records, and invalid admin addresses. Python raises typed exceptions from
 `blockchain_client.exceptions`; it does not swallow failures with `None`.
+
+## Common Errors
+
+### `artifact_path does not exist`
+
+Cause: the contract has not been compiled yet.
+
+Fix:
+
+```powershell
+forge build
+```
+
+The Python client expects this artifact by default:
+
+```text
+out/EvidenceRegistry.sol/EvidenceRegistry.json
+```
+
+### `no deployed bytecode at contract address`
+
+Common causes:
+
+- `CONTRACT_ADDRESS` is wrong.
+- Anvil was restarted.
+- The client is connected to a different chain.
+- The contract has not been deployed.
+
+Deploy the registry again and update `CONTRACT_ADDRESS`.
+
+### `chain ID mismatch`
+
+Check the active RPC chain:
+
+```powershell
+cast chain-id --rpc-url http://127.0.0.1:8545
+```
+
+For the local Anvil workflow this should return:
+
+```text
+31337
+```
+
+### `AccessControlUnauthorizedAccount`
+
+Cause: the signer does not have `WRITER_ROLE`, `PAUSER_ROLE`, or
+`DEFAULT_ADMIN_ROLE` for the action being attempted.
+
+For writer transactions, run `GrantWriterRole.s.sol` with the admin key:
+
+```powershell
+$env:CONTRACT_ADDRESS="0x..."
+$env:WRITER_ADDRESS="0x..."
+$env:ADMIN_PRIVATE_KEY="0x..."
+forge script script/GrantWriterRole.s.sol:GrantWriterRole --rpc-url $env:RPC_URL --broadcast -vvvv
+```
+
+### PowerShell activation is blocked
+
+Allow activation for the current PowerShell process only:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+### `forge` not found
+
+Close and reopen Git Bash, then run:
+
+```bash
+source ~/.bashrc
+foundryup
+forge --version
+```
+
+On Windows PowerShell, the executable may also be available at:
+
+```powershell
+C:\Users\kiadt\.foundry\bin\forge.exe --version
+```
+
+## Pull Request Workflow
+
+After local tests pass, open a pull request:
+
+```text
+feature/production-blockchain-module -> main
+```
+
+The PR URL is:
+
+```text
+https://github.com/Unsull/Blockchain/pull/new/feature/production-blockchain-module
+```
+
+GitHub Actions runs two jobs:
+
+- `solidity`: installs dependencies, then runs `forge fmt --check`,
+  `forge build`, and `forge test -vvv`.
+- `python`: runs `ruff`, `mypy`, and `pytest`.
+
+Wait for both jobs to pass:
+
+- Solidity CI: Passed
+- Python CI: Passed
+
+If no workflow appears in GitHub Actions, check that Actions are enabled for
+the repository and that workflows from the feature branch are allowed to run.
 
 ## Migration
 

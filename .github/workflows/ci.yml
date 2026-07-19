@@ -16,8 +16,8 @@ jobs:
           version: stable
       - name: Install Solidity dependencies
         run: |
-          forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
-          forge install foundry-rs/forge-std@v1.9.4 --no-commit
+          forge install OpenZeppelin/openzeppelin-contracts@v5.0.2
+          forge install foundry-rs/forge-std@v1.9.4
       - run: forge fmt --check
       - run: forge build
       - run: forge test -vvv

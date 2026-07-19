@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {EvidenceRegistry} from "../contracts/EvidenceRegistry.sol";
-import {IEvidenceRegistry} from "../contracts/interfaces/IEvidenceRegistry.sol";
+import { Test } from "forge-std/Test.sol";
+import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { IEvidenceRegistry } from "../contracts/interfaces/IEvidenceRegistry.sol";
 
 contract EvidenceRegistryTest is Test {
     EvidenceRegistry internal registry;
@@ -13,10 +13,7 @@ contract EvidenceRegistryTest is Test {
     bytes32 internal staticHash = keccak256("static");
 
     event EvidenceRecorded(
-        bytes32 indexed evidenceRef,
-        bytes32 staticHash,
-        uint64 recordedAt,
-        address indexed writer
+        bytes32 indexed evidenceRef, bytes32 staticHash, uint64 recordedAt, address indexed writer
     );
 
     event EvidenceAccessRecorded(
@@ -29,8 +26,9 @@ contract EvidenceRegistryTest is Test {
 
     function setUp() public {
         registry = new EvidenceRegistry(admin);
+        bytes32 writerRole = registry.WRITER_ROLE();
         vm.prank(admin);
-        registry.grantRole(registry.WRITER_ROLE(), writer);
+        registry.grantRole(writerRole, writer);
     }
 
     function testDeploymentGrantsAdmin() public view {

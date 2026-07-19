@@ -27,6 +27,14 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = [
+  ".venv",
+  "broadcast",
+  "cache",
+  "data",
+  "lib",
+  "out"
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ANN"]
