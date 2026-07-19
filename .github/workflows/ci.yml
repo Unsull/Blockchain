@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "feature/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  solidity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Install Solidity dependencies
+        run: |
+          forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
+          forge install foundry-rs/forge-std@v1.9.4 --no-commit
+      - run: forge fmt --check
+      - run: forge build
+      - run: forge test -vvv
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff check .
+      - run: mypy blockchain_client
+      - run: pytest

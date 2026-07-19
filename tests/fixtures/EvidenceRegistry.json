@@ -1,0 +1,83 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {"internalType": "address", "name": "admin", "type": "address"}
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "staticHash", "type": "bytes32"}
+      ],
+      "name": "recordEvidence",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "officerRef", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "accessSessionRef", "type": "bytes32"}
+      ],
+      "name": "recordAccess",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"}
+      ],
+      "name": "getEvidence",
+      "outputs": [
+        {"internalType": "bytes32", "name": "staticHash", "type": "bytes32"},
+        {"internalType": "uint64", "name": "recordedAt", "type": "uint64"},
+        {"internalType": "address", "name": "writer", "type": "address"},
+        {"internalType": "bool", "name": "exists", "type": "bool"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "accessSessionRef", "type": "bytes32"}
+      ],
+      "name": "getAccessBySession",
+      "outputs": [
+        {"internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "officerRef", "type": "bytes32"},
+        {"internalType": "uint64", "name": "recordedAt", "type": "uint64"},
+        {"internalType": "address", "name": "writer", "type": "address"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"},
+        {"indexed": false, "internalType": "bytes32", "name": "staticHash", "type": "bytes32"},
+        {"indexed": false, "internalType": "uint64", "name": "recordedAt", "type": "uint64"},
+        {"indexed": true, "internalType": "address", "name": "writer", "type": "address"}
+      ],
+      "name": "EvidenceRecorded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "evidenceRef", "type": "bytes32"},
+        {"indexed": true, "internalType": "bytes32", "name": "officerRef", "type": "bytes32"},
+        {"indexed": true, "internalType": "bytes32", "name": "accessSessionRef", "type": "bytes32"},
+        {"indexed": false, "internalType": "uint64", "name": "recordedAt", "type": "uint64"},
+        {"indexed": false, "internalType": "address", "name": "writer", "type": "address"}
+      ],
+      "name": "EvidenceAccessRecorded",
+      "type": "event"
+    }
+  ]
+}
