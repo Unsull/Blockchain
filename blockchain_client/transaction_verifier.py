@@ -1,7 +1,9 @@
 """Transaction verifier for historical EvidenceRegistry transactions."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any, cast
 
+from eth_typing import HexStr
 from web3.exceptions import TransactionNotFound
 
 from blockchain_client.client import BlockchainClient
@@ -41,9 +43,9 @@ class TransactionVerifier:
             static_hash=static_hash,
             tx_hash=normalized,
             block_number=receipt.blockNumber,
-            block_timestamp=datetime.fromtimestamp(block.timestamp, tz=timezone.utc),
+            block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             writer=event["writer"],
-            confirmations=self._confirmations(receipt.blockNumber),
+            confirmations=self._confirmations(receipt["blockNumber"]),
             status="verified",
         )
 
@@ -78,30 +80,30 @@ class TransactionVerifier:
             access_session_ref=session_ref,
             tx_hash=normalized,
             block_number=receipt.blockNumber,
-            block_timestamp=datetime.fromtimestamp(block.timestamp, tz=timezone.utc),
+            block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             writer=event["writer"],
-            confirmations=self._confirmations(receipt.blockNumber),
+            confirmations=self._confirmations(receipt["blockNumber"]),
             status="verified",
         )
 
-    def _load_successful_transaction(self, tx_hash: str):
+    def _load_successful_transaction(self, tx_hash: str) -> tuple[Any, Any, Any]:
         try:
-            tx = self.client.web3.eth.get_transaction(tx_hash)
-            receipt = self.client.web3.eth.get_transaction_receipt(tx_hash)
+            tx = cast(Any, self.client.web3.eth.get_transaction(HexStr(tx_hash)))
+            receipt = cast(Any, self.client.web3.eth.get_transaction_receipt(HexStr(tx_hash)))
         except TransactionNotFound as exc:
             raise TransactionVerificationError("transaction not found") from exc
-        if receipt.status != 1:
+        if receipt["status"] != 1:
             raise TransactionVerificationError("transaction failed")
-        block = self.client.web3.eth.get_block(receipt.blockNumber)
-        if self._confirmations(receipt.blockNumber) < self.client.settings.confirmation_blocks:
+        block = cast(Any, self.client.web3.eth.get_block(receipt["blockNumber"]))
+        if self._confirmations(receipt["blockNumber"]) < self.client.settings.confirmation_blocks:
             raise TransactionVerificationError("insufficient confirmations")
         return tx, receipt, block
 
-    def _assert_contract_target(self, tx) -> None:
-        if tx.to.lower() != self.client.contract.address.lower():
+    def _assert_contract_target(self, tx: Any) -> None:
+        if tx["to"].lower() != self.client.contract.address.lower():
             raise TransactionVerificationError("transaction target is not the configured contract")
 
-    def _single_event(self, receipt, event_name: str):
+    def _single_event(self, receipt: Any, event_name: str) -> Any:
         event_class = getattr(self.client.contract.events, event_name)
         decoded = event_class().process_receipt(receipt)
         if len(decoded) != 1:

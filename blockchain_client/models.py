@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -14,7 +15,7 @@ class TransactionResult:
     contract_address: str
     chain_id: int
     confirmations: int
-    event: dict
+    event: dict[str, Any]
 
 
 @dataclass(frozen=True)

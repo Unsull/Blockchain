@@ -1,7 +1,7 @@
 """Signed transaction client for EvidenceRegistry."""
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, cast
 
 from eth_account import Account
 from web3 import Web3
@@ -67,7 +67,9 @@ class BlockchainClient:
         """Query an evidence record from contract state."""
 
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
-        static_hash, recorded_at, writer, exists = self.contract.functions.getEvidence(evidence).call()
+        static_hash, recorded_at, writer, exists = (
+            self.contract.functions.getEvidence(evidence).call()
+        )
         return {
             "static_hash": static_hash.hex(),
             "recorded_at": recorded_at,
@@ -89,7 +91,11 @@ class BlockchainClient:
             "writer": writer,
         }
 
-    def _send_contract_transaction(self, function: Any, expected_event_name: str) -> TransactionResult:
+    def _send_contract_transaction(
+        self,
+        function: Any,
+        expected_event_name: str,
+    ) -> TransactionResult:
         self.validate_connection()
         try:
             nonce = self.web3.eth.get_transaction_count(self.account.address)
@@ -104,23 +110,26 @@ class BlockchainClient:
             transaction["gas"] = int(gas_estimate * 1.2)
             signed = self.account.sign_transaction(transaction)
             tx_hash = self.web3.eth.send_raw_transaction(signed.raw_transaction)
-            receipt = self.web3.eth.wait_for_transaction_receipt(
-                tx_hash,
-                timeout=self.settings.request_timeout_seconds,
+            receipt = cast(
+                Any,
+                self.web3.eth.wait_for_transaction_receipt(
+                    tx_hash,
+                    timeout=self.settings.request_timeout_seconds,
+                ),
             )
         except Exception as exc:
             raise TransactionSubmissionError("failed to submit signed transaction") from exc
 
-        if receipt.status != 1:
+        if receipt["status"] != 1:
             raise TransactionSubmissionError("transaction receipt status is 0")
 
         event = self._decode_expected_event(receipt, expected_event_name)
-        block = self.web3.eth.get_block(receipt.blockNumber)
-        confirmations = max(self.web3.eth.block_number - receipt.blockNumber, 0)
+        block = cast(Any, self.web3.eth.get_block(receipt["blockNumber"]))
+        confirmations = max(self.web3.eth.block_number - receipt["blockNumber"], 0)
         return TransactionResult(
-            tx_hash=receipt.transactionHash.hex(),
-            block_number=receipt.blockNumber,
-            block_timestamp=datetime.fromtimestamp(block.timestamp, tz=timezone.utc),
+            tx_hash=receipt["transactionHash"].hex(),
+            block_number=receipt["blockNumber"],
+            block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             contract_address=self.contract.address,
             chain_id=self.settings.chain_id,
             confirmations=confirmations,

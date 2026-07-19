@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from eth_utils import is_address
+from web3 import Web3
 
 from blockchain_client.exceptions import ConfigurationError
 
@@ -25,7 +25,7 @@ class BlockchainClientSettings:
             raise ConfigurationError("provider_uri is required")
         if self.chain_id <= 0:
             raise ConfigurationError("chain_id must be positive")
-        if not is_address(self.contract_address):
+        if not Web3.is_address(self.contract_address):
             raise ConfigurationError("contract_address must be a valid EVM address")
         if not self.signer_private_key:
             raise ConfigurationError("signer_private_key is required")
