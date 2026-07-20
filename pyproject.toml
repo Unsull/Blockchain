@@ -23,6 +23,9 @@ exclude = ["contracts*", "script*", "test*", "tests*", "network*", "examples*", 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+  "integration: tests requiring a live local EVM node"
+]
 
 [tool.ruff]
 line-length = 100

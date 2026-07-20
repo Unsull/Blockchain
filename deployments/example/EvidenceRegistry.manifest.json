@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-01-01T00:00:00+00:00",
+  "network": "example-private-network",
+  "rpc_url": "https://rpc.example.invalid",
+  "chain_id": 31337,
+  "contract_name": "EvidenceRegistry",
+  "contract_address": "0x0000000000000000000000000000000000000001",
+  "deployer_address": "0x0000000000000000000000000000000000000002",
+  "admin_address": "0x0000000000000000000000000000000000000003",
+  "artifact_path": "out/EvidenceRegistry.sol/EvidenceRegistry.json",
+  "git_commit": "example",
+  "git_branch": "fix/blockchain-production-readiness",
+  "foundry": {
+    "forge_version": "forge Version: 1.7.1"
+  }
+}

@@ -70,23 +70,26 @@ OpenZeppelin `Pausable` emits standard `Paused` and `Unpaused` events.
 ## Compile
 
 ```powershell
-forge install OpenZeppelin/openzeppelin-contracts@v5.0.2
-forge install foundry-rs/forge-std@v1.9.4
+git clone --recurse-submodules https://github.com/Unsull/Blockchain.git
+cd Blockchain
+git submodule update --init --recursive
 forge build
 ```
 
-Forge `1.7.1` no longer supports `--no-commit`. The default install behavior
-does not create a commit unless `--commit` is provided.
+Foundry is pinned to `forge 1.7.1` in CI. Solidity dependencies are pinned by
+Git submodules and `foundry.lock`; CI does not run `forge install`.
 
 ## Test
 
 ```powershell
 forge fmt --check
+forge build
 forge test -vvv
+forge test --gas-report
 python -m pip install -e ".[dev]"
 ruff check .
 mypy blockchain_client
-pytest
+pytest -m "not integration" -vv
 ```
 
 ## Deploy
@@ -94,8 +97,12 @@ pytest
 ```powershell
 $env:REGISTRY_ADMIN_ADDRESS="0x..."
 $env:DEPLOYER_PRIVATE_KEY="0x..."
+$env:CHAIN_ID="31337"
 forge script script/DeployEvidenceRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
 ```
+
+Deployment scripts fail fast when `CHAIN_ID` does not match, the target contract
+has no bytecode, or a role address is zero.
 
 ## Grant Or Revoke Writer
 
@@ -106,6 +113,9 @@ $env:ADMIN_PRIVATE_KEY="0x..."
 forge script script/GrantWriterRole.s.sol --rpc-url $env:RPC_URL --broadcast
 forge script script/RevokeWriterRole.s.sol --rpc-url $env:RPC_URL --broadcast
 ```
+
+Pauser role management uses `PAUSER_ADDRESS` with
+`script/GrantPauserRole.s.sol` and `script/RevokePauserRole.s.sol`.
 
 ## Pause Or Unpause
 
@@ -120,20 +130,27 @@ forge script script/UnpauseRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
 
 ```python
 from pathlib import Path
-from blockchain_client import BlockchainClient, BlockchainClientSettings
+from blockchain_client import BlockchainClient, BlockchainClientSettings, LocalPrivateKeySigner
 
 settings = BlockchainClientSettings(
     provider_uri="http://127.0.0.1:8545",
     chain_id=31337,
     contract_address="0x...",
-    signer_private_key="0x...",
     artifact_path=Path("out/EvidenceRegistry.sol/EvidenceRegistry.json"),
+    confirmation_blocks=2,
 )
 
-client = BlockchainClient(settings)
+signer = LocalPrivateKeySigner("0x...")
+client = BlockchainClient(settings, signer=signer)
 result = client.record_evidence(evidence_ref, static_hash)
 access = client.record_access(evidence_ref, officer_ref, access_session_ref)
 ```
+
+`signer_private_key` remains as a temporary backward-compatible setting, but new
+integrations should inject a `TransactionSigner`. The client allocates nonces
+from pending chain state, waits for configurable confirmations, validates the
+emitted event against the input and receipt, and returns canonical lowercase
+`0x`-prefixed bytes32 values.
 
 ## Environment Variables
 
@@ -144,9 +161,38 @@ access = client.record_access(evidence_ref, officer_ref, access_session_ref)
 - `PAUSER_PRIVATE_KEY`: pause/unpause signer.
 - `CONTRACT_ADDRESS`: deployed registry address.
 - `WRITER_ADDRESS`: backend writer address.
+- `WRITER_PRIVATE_KEY`: writer signer key for local examples only.
+- `UNAUTHORIZED_PRIVATE_KEY`: non-writer key for negative smoke tests.
+- `MIN_CONFIRMATIONS`: client confirmation depth.
+- `ARTIFACT_PATH`: Foundry artifact path.
 
 The Python client accepts structured settings directly and does not read
 secrets from global module state.
+
+Use `.env.example` for production shape and `.env.anvil.example` only as local
+Anvil scaffolding. Neither file contains private keys.
+
+## Smoke Tests
+
+After deploying and granting `WRITER_ROLE`, run:
+
+```powershell
+python .\examples\manual_smoke_test.py
+python .\examples\manual_negative_smoke_test.py
+```
+
+The negative smoke test checks duplicate evidence, duplicate access session,
+unauthorized writer rejection, and paused contract rejection.
+
+## Deployment Manifests
+
+Generate and verify manifests after deploy:
+
+```powershell
+python scripts/generate_deployment_manifest.py --network anvil --rpc-url $env:RPC_URL --chain-id 31337 --contract-address $env:CONTRACT_ADDRESS --deployer-address 0x... --admin-address $env:REGISTRY_ADMIN_ADDRESS --output deployments/anvil/EvidenceRegistry.manifest.json
+python scripts/verify_deployment.py --manifest deployments/anvil/EvidenceRegistry.manifest.json
+python scripts/export_artifact.py --output deployments/anvil/EvidenceRegistry.artifact.json
+```
 
 ## Transaction Result Format
 
@@ -268,20 +314,23 @@ C:\Users\kiadt\.foundry\bin\forge.exe --version
 After local tests pass, open a pull request:
 
 ```text
-feature/production-blockchain-module -> main
+fix/blockchain-production-readiness -> main
 ```
+
+Do not push directly to `main`. Require PR review and passing checks before
+merge. Protect `main` with required status checks for `solidity` and `python`.
 
 The PR URL is:
 
 ```text
-https://github.com/Unsull/Blockchain/pull/new/feature/production-blockchain-module
+https://github.com/Unsull/Blockchain/pull/new/fix/blockchain-production-readiness
 ```
 
 GitHub Actions runs two jobs:
 
-- `solidity`: installs dependencies, then runs `forge fmt --check`,
-  `forge build`, and `forge test -vvv`.
-- `python`: runs `ruff`, `mypy`, and `pytest`.
+- `solidity`: uses recursive submodules, Foundry `1.7.1`, then runs
+  `forge fmt --check`, `forge build`, `forge test -vvv`, and gas report.
+- `python`: runs `ruff`, `mypy`, and `pytest -m "not integration" -vv`.
 
 Wait for both jobs to pass:
 

@@ -18,15 +18,15 @@ def main() -> None:
     writer_private_key = os.environ["WRITER_PRIVATE_KEY"]
 
     settings = BlockchainClientSettings(
-        provider_uri="http://127.0.0.1:8545",
-        chain_id=31337,
+        provider_uri=os.getenv("RPC_URL", "http://127.0.0.1:8545"),
+        chain_id=int(os.getenv("CHAIN_ID", "31337")),
         contract_address=contract_address,
         signer_private_key=writer_private_key,
         artifact_path=Path(
-            "out/EvidenceRegistry.sol/EvidenceRegistry.json"
+            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistry.sol/EvidenceRegistry.json")
         ),
         request_timeout_seconds=30,
-        confirmation_blocks=0,
+        confirmation_blocks=int(os.getenv("MIN_CONFIRMATIONS", "0")),
     )
 
     client = BlockchainClient(settings)

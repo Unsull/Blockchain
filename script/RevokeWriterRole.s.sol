@@ -9,6 +9,11 @@ contract RevokeWriterRole is Script {
         EvidenceRegistry registry = EvidenceRegistry(vm.envAddress("CONTRACT_ADDRESS"));
         address writer = vm.envAddress("WRITER_ADDRESS");
         uint256 adminPrivateKey = vm.envUint("ADMIN_PRIVATE_KEY");
+        uint256 expectedChainId = vm.envUint("CHAIN_ID");
+
+        require(block.chainid == expectedChainId, "Invalid chain ID");
+        require(address(registry).code.length > 0, "Contract not deployed");
+        require(writer != address(0), "Writer cannot be zero address");
 
         vm.startBroadcast(adminPrivateKey);
         registry.revokeRole(registry.WRITER_ROLE(), writer);

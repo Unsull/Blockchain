@@ -9,7 +9,7 @@ from web3.exceptions import TransactionNotFound
 from blockchain_client.client import BlockchainClient
 from blockchain_client.exceptions import TransactionVerificationError
 from blockchain_client.models import VerifiedAccess, VerifiedEvidence
-from blockchain_client.references import normalize_tx_hash
+from blockchain_client.references import bytes32_to_hex, normalize_tx_hash
 
 
 class TransactionVerifier:
@@ -21,18 +21,24 @@ class TransactionVerifier:
     def verify_evidence_transaction(self, tx_hash: str) -> VerifiedEvidence:
         """Verify a recordEvidence transaction."""
 
+        self.client.validate_connection()
         normalized = normalize_tx_hash(tx_hash)
         tx, receipt, block = self._load_successful_transaction(normalized)
         self._assert_contract_target(tx)
-        function, params = self.client.contract.decode_function_input(tx.input)
+        function, params = self.client.contract.decode_function_input(tx["input"])
         if function.fn_name != "recordEvidence":
             raise TransactionVerificationError("transaction did not call recordEvidence")
 
         event = self._single_event(receipt, "EvidenceRecorded")
-        evidence_ref = params["evidenceRef"].hex()
-        static_hash = params["staticHash"].hex()
-        if event["evidenceRef"].hex() != evidence_ref or event["staticHash"].hex() != static_hash:
+        self._assert_log_metadata(event, receipt)
+        evidence_ref = bytes32_to_hex(params["evidenceRef"])
+        static_hash = bytes32_to_hex(params["staticHash"])
+        if (
+            bytes32_to_hex(event["evidenceRef"]) != evidence_ref
+            or bytes32_to_hex(event["staticHash"]) != static_hash
+        ):
             raise TransactionVerificationError("event/input mismatch")
+        self._assert_writer(tx, event)
 
         state = self.client.get_evidence(evidence_ref)
         if state["static_hash"] != static_hash:
@@ -42,7 +48,7 @@ class TransactionVerifier:
             evidence_ref=evidence_ref,
             static_hash=static_hash,
             tx_hash=normalized,
-            block_number=receipt.blockNumber,
+            block_number=receipt["blockNumber"],
             block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             writer=event["writer"],
             confirmations=self._confirmations(receipt["blockNumber"]),
@@ -52,23 +58,26 @@ class TransactionVerifier:
     def verify_access_transaction(self, tx_hash: str) -> VerifiedAccess:
         """Verify a recordAccess transaction."""
 
+        self.client.validate_connection()
         normalized = normalize_tx_hash(tx_hash)
         tx, receipt, block = self._load_successful_transaction(normalized)
         self._assert_contract_target(tx)
-        function, params = self.client.contract.decode_function_input(tx.input)
+        function, params = self.client.contract.decode_function_input(tx["input"])
         if function.fn_name != "recordAccess":
             raise TransactionVerificationError("transaction did not call recordAccess")
 
         event = self._single_event(receipt, "EvidenceAccessRecorded")
-        evidence_ref = params["evidenceRef"].hex()
-        officer_ref = params["officerRef"].hex()
-        session_ref = params["accessSessionRef"].hex()
+        self._assert_log_metadata(event, receipt)
+        evidence_ref = bytes32_to_hex(params["evidenceRef"])
+        officer_ref = bytes32_to_hex(params["officerRef"])
+        session_ref = bytes32_to_hex(params["accessSessionRef"])
         if (
-            event["evidenceRef"].hex() != evidence_ref
-            or event["officerRef"].hex() != officer_ref
-            or event["accessSessionRef"].hex() != session_ref
+            bytes32_to_hex(event["evidenceRef"]) != evidence_ref
+            or bytes32_to_hex(event["officerRef"]) != officer_ref
+            or bytes32_to_hex(event["accessSessionRef"]) != session_ref
         ):
             raise TransactionVerificationError("event/input mismatch")
+        self._assert_writer(tx, event)
 
         state = self.client.get_access_by_session(session_ref)
         if state["evidence_ref"] != evidence_ref or state["officer_ref"] != officer_ref:
@@ -79,7 +88,7 @@ class TransactionVerifier:
             officer_ref=officer_ref,
             access_session_ref=session_ref,
             tx_hash=normalized,
-            block_number=receipt.blockNumber,
+            block_number=receipt["blockNumber"],
             block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             writer=event["writer"],
             confirmations=self._confirmations(receipt["blockNumber"]),
@@ -100,6 +109,8 @@ class TransactionVerifier:
         return tx, receipt, block
 
     def _assert_contract_target(self, tx: Any) -> None:
+        if tx["to"] is None:
+            raise TransactionVerificationError("contract creation transaction is not supported")
         if tx["to"].lower() != self.client.contract.address.lower():
             raise TransactionVerificationError("transaction target is not the configured contract")
 
@@ -108,7 +119,26 @@ class TransactionVerifier:
         decoded = event_class().process_receipt(receipt)
         if len(decoded) != 1:
             raise TransactionVerificationError(f"expected exactly one {event_name} event")
-        return decoded[0]["args"]
+        event = decoded[0]
+        if event["address"].lower() != self.client.contract.address.lower():
+            raise TransactionVerificationError("event contract address mismatch")
+        args = dict(event["args"])
+        args.update({
+            "_address": event["address"],
+            "_blockNumber": event["blockNumber"],
+            "_transactionHash": event["transactionHash"],
+        })
+        return args
+
+    def _assert_log_metadata(self, event: Any, receipt: Any) -> None:
+        if event["_blockNumber"] != receipt["blockNumber"]:
+            raise TransactionVerificationError("event block number mismatch")
+        if event["_transactionHash"] != receipt["transactionHash"]:
+            raise TransactionVerificationError("event transaction hash mismatch")
+
+    def _assert_writer(self, tx: Any, event: Any) -> None:
+        if event["writer"].lower() != tx["from"].lower():
+            raise TransactionVerificationError("event writer does not match transaction sender")
 
     def _confirmations(self, block_number: int) -> int:
         return max(self.client.web3.eth.block_number - block_number, 0)

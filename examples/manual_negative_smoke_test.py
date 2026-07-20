@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -12,10 +13,6 @@ from blockchain_client.exceptions import TransactionSubmissionError
 
 DEFAULT_RPC_URL = "http://127.0.0.1:8545"
 DEFAULT_CHAIN_ID = 31337
-DEFAULT_FORGE = r"C:\Users\kiadt\.foundry\bin\forge.exe"
-DEFAULT_ANVIL_ACCOUNT_0_KEY = (
-    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-)
 
 
 def to_bytes32(value: str) -> str:
@@ -57,7 +54,9 @@ def expect_submission_failure(label: str, action: Callable[[], object]) -> None:
 def run_forge_script(script_target: str, extra_env: dict[str, str]) -> None:
     """Run a Foundry script against the configured local RPC."""
 
-    forge = os.getenv("FORGE_EXE", DEFAULT_FORGE)
+    forge = os.getenv("FORGE_EXE") or shutil.which("forge")
+    if forge is None:
+        raise RuntimeError("forge executable not found; set FORGE_EXE or add forge to PATH")
     env = os.environ.copy()
     env.update(extra_env)
     env.setdefault("RPC_URL", DEFAULT_RPC_URL)
@@ -75,8 +74,8 @@ def run_forge_script(script_target: str, extra_env: dict[str, str]) -> None:
 
 def main() -> None:
     writer_key = os.environ["WRITER_PRIVATE_KEY"]
-    unauthorized_key = os.getenv("UNAUTHORIZED_PRIVATE_KEY", DEFAULT_ANVIL_ACCOUNT_0_KEY)
-    pauser_key = os.getenv("PAUSER_PRIVATE_KEY", DEFAULT_ANVIL_ACCOUNT_0_KEY)
+    unauthorized_key = os.environ["UNAUTHORIZED_PRIVATE_KEY"]
+    pauser_key = os.environ["PAUSER_PRIVATE_KEY"]
 
     writer = make_client(writer_key)
     unauthorized = make_client(unauthorized_key)
