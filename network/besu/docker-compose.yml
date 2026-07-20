@@ -1,0 +1,145 @@
+name: evidence-besu-qbft
+
+x-besu-image: &besu_image ${BESU_IMAGE:-hyperledger/besu:26.7.0}
+x-logging: &default_logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+x-validator-healthcheck: &validator_healthcheck
+  test: ["CMD-SHELL", "test -d /opt/besu/data/database && test -f /opt/besu/genesis.json"]
+  interval: 15s
+  timeout: 5s
+  retries: 12
+  start_period: 30s
+
+services:
+  validator-1:
+    image: *besu_image
+    user: "1000:1000"
+    restart: unless-stopped
+    command: ["--config-file=/opt/besu/config/config.toml"]
+    volumes:
+      - ./genesis/genesis.json:/opt/besu/genesis.json:ro
+      - ./nodes/validator-1/config.toml:/opt/besu/config/config.toml:ro
+      - ./build/static-nodes.json:/opt/besu/static-nodes.json:ro
+      - ./keys/validator-1/key:/opt/besu/key:ro
+      - validator-1-data:/opt/besu/data
+    networks: [besu-private]
+    healthcheck: *validator_healthcheck
+    logging: *default_logging
+
+  validator-2:
+    image: *besu_image
+    user: "1000:1000"
+    restart: unless-stopped
+    command: ["--config-file=/opt/besu/config/config.toml"]
+    volumes:
+      - ./genesis/genesis.json:/opt/besu/genesis.json:ro
+      - ./nodes/validator-2/config.toml:/opt/besu/config/config.toml:ro
+      - ./build/static-nodes.json:/opt/besu/static-nodes.json:ro
+      - ./keys/validator-2/key:/opt/besu/key:ro
+      - validator-2-data:/opt/besu/data
+    networks: [besu-private]
+    healthcheck: *validator_healthcheck
+    logging: *default_logging
+
+  validator-3:
+    image: *besu_image
+    user: "1000:1000"
+    restart: unless-stopped
+    command: ["--config-file=/opt/besu/config/config.toml"]
+    volumes:
+      - ./genesis/genesis.json:/opt/besu/genesis.json:ro
+      - ./nodes/validator-3/config.toml:/opt/besu/config/config.toml:ro
+      - ./build/static-nodes.json:/opt/besu/static-nodes.json:ro
+      - ./keys/validator-3/key:/opt/besu/key:ro
+      - validator-3-data:/opt/besu/data
+    networks: [besu-private]
+    healthcheck: *validator_healthcheck
+    logging: *default_logging
+
+  validator-4:
+    image: *besu_image
+    user: "1000:1000"
+    restart: unless-stopped
+    command: ["--config-file=/opt/besu/config/config.toml"]
+    volumes:
+      - ./genesis/genesis.json:/opt/besu/genesis.json:ro
+      - ./nodes/validator-4/config.toml:/opt/besu/config/config.toml:ro
+      - ./build/static-nodes.json:/opt/besu/static-nodes.json:ro
+      - ./keys/validator-4/key:/opt/besu/key:ro
+      - validator-4-data:/opt/besu/data
+    networks: [besu-private]
+    healthcheck: *validator_healthcheck
+    logging: *default_logging
+
+  rpc-node:
+    image: *besu_image
+    user: "1000:1000"
+    restart: unless-stopped
+    command: ["--config-file=/opt/besu/config/config.toml"]
+    depends_on:
+      validator-1:
+        condition: service_healthy
+      validator-2:
+        condition: service_healthy
+      validator-3:
+        condition: service_healthy
+      validator-4:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${RPC_HTTP_PORT:-8545}:8545"
+    volumes:
+      - ./genesis/genesis.json:/opt/besu/genesis.json:ro
+      - ./nodes/rpc-node/config.toml:/opt/besu/config/config.toml:ro
+      - ./build/static-nodes.json:/opt/besu/static-nodes.json:ro
+      - ./keys/rpc-node/key:/opt/besu/key:ro
+      - rpc-node-data:/opt/besu/data
+    networks: [besu-private]
+    healthcheck:
+      test: ["CMD-SHELL", "test -d /opt/besu/data/database && test -f /opt/besu/genesis.json"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
+    logging: *default_logging
+
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
+    networks: [besu-private]
+    logging: *default_logging
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-local-only}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    networks: [besu-private]
+    logging: *default_logging
+
+networks:
+  besu-private:
+    driver: bridge
+    internal: false
+
+volumes:
+  validator-1-data:
+  validator-2-data:
+  validator-3-data:
+  validator-4-data:
+  rpc-node-data:
+  prometheus-data:
+  grafana-data:

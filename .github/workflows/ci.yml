@@ -33,3 +33,107 @@ jobs:
       - run: ruff check .
       - run: mypy blockchain_client
       - run: pytest -m "not integration" -vv
+
+  besu-network:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Validate Besu version pin
+        run: |
+          test "$(grep '^BESU_VERSION=' network/besu/.env.example | cut -d= -f2)" != ""
+          ! grep -R "hyperledger/besu:latest" network/besu
+      - name: Check script syntax
+        run: |
+          bash -n network/besu/scripts/generate-network.sh
+          bash -n network/besu/scripts/start-network.sh
+          bash -n network/besu/scripts/stop-network.sh
+          bash -n network/besu/scripts/reset-network.sh
+          bash -n network/besu/scripts/deploy-registry.sh
+          python -m py_compile network/besu/scripts/*.py
+      - name: Docker compose config
+        run: docker compose --project-directory network/besu --env-file network/besu/.env.example config
+      - name: Generate CI accounts
+        run: |
+          python - <<'PY' > /tmp/besu-ci-env
+          from eth_account import Account
+          labels = {
+              "DEPLOYER": Account.create(),
+              "ADMIN": Account.create(),
+              "WRITER": Account.create(),
+              "PAUSER": Account.create(),
+              "UNAUTHORIZED": Account.create(),
+          }
+          for label, account in labels.items():
+              private_key = account.key.hex().removeprefix("0x")
+              print(f"{label}_PRIVATE_KEY=0x{private_key}")
+              print(f"{label}_ADDRESS={account.address}")
+          PY
+      - name: Generate network
+        run: |
+          set -a
+          source network/besu/.env.example
+          set +a
+          network/besu/scripts/generate-network.sh --force
+      - name: Start network
+        run: |
+          set -a
+          source network/besu/.env.example
+          set +a
+          network/besu/scripts/start-network.sh
+      - name: Deploy EvidenceRegistry
+        run: |
+          set -a
+          source network/besu/.env.example
+          source /tmp/besu-ci-env
+          set +a
+          export RPC_URL="http://127.0.0.1:${RPC_HTTP_PORT}"
+          export REGISTRY_ADMIN_ADDRESS="${ADMIN_ADDRESS}"
+          export WRITER_ADDRESS="${WRITER_ADDRESS}"
+          export PAUSER_ADDRESS="${PAUSER_ADDRESS}"
+          export ADMIN_PRIVATE_KEY="${ADMIN_PRIVATE_KEY}"
+          export DEPLOYER_PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}"
+          network/besu/scripts/deploy-registry.sh
+      - name: Smoke test
+        run: |
+          set -a
+          source network/besu/.env.example
+          source /tmp/besu-ci-env
+          source "network/besu/deployments/${CHAIN_ID}/contract-address.env"
+          set +a
+          export RPC_URL="http://127.0.0.1:${RPC_HTTP_PORT}"
+          export WRITER_PRIVATE_KEY="${WRITER_PRIVATE_KEY}"
+          export MIN_CONFIRMATIONS=1
+          python network/besu/scripts/smoke-test.py
+      - name: Failure test subset
+        run: |
+          set -a
+          source network/besu/.env.example
+          set +a
+          python network/besu/scripts/failure-test.py \
+            --rpc-url "http://127.0.0.1:${RPC_HTTP_PORT}" \
+            --wait-seconds 12
+      - name: Secret leakage guard
+        run: |
+          ! grep -R -E 'PRIVATE_KEY=.*0x[0-9a-fA-F]{64}|0xac0974|59c699' network/besu
+      - name: Stop network
+        if: always()
+        run: docker compose --project-directory network/besu down -v
+      - name: Collect Besu logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: besu-network-debug
+          path: |
+            network/besu/logs
+            network/besu/build
