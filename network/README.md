@@ -1,7 +1,8 @@
 # Private Network Guidance
 
 This directory contains example-only private network material for integrating
-the blockchain module with a private EVM network.
+the blockchain module with a private EVM network. These files are templates, not
+production-ready infrastructure.
 
 Pin the Geth version in deployment documentation before production use. The
 templates here are not a claim of multi-node production readiness; validate them

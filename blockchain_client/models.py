@@ -19,6 +19,17 @@ class TransactionResult:
 
 
 @dataclass(frozen=True)
+class BlockchainHealth:
+    """Connection and deployment health details."""
+
+    connected: bool
+    chain_id: int | None
+    latest_block: int | None
+    contract_address: str
+    contract_deployed: bool
+
+
+@dataclass(frozen=True)
 class VerifiedEvidence:
     """Verified recordEvidence transaction details."""
 

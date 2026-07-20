@@ -16,6 +16,10 @@ variables or a secret manager for deployment automation. The Python client signs
 raw transactions locally and should run only in a controlled backend execution
 environment.
 
+Prefer injecting a signer implementation instead of storing a private key in
+application settings. `signer_private_key` is kept only for migration
+compatibility and should not be used for new production integrations.
+
 ## RPC Exposure
 
 Expose only the RPC namespaces required by backend integration: `eth`, `net`,
@@ -27,6 +31,9 @@ systems or external networks.
 Use separate accounts for deployer, admin, pauser, backend writer, and
 validator/operator duties. Store admin keys offline when possible. Rotate writer
 keys by granting a new writer and revoking the old writer.
+
+Deployment automation should generate a manifest and verify bytecode, chain ID,
+contract address, and role assignments before enabling backend writes.
 
 ## Admin Key Recommendations
 

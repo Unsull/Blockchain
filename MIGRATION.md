@@ -12,6 +12,11 @@ blockchain boundary.
 - `accessSessionId` is now `accessSessionRef`.
 - `getAccessLogs` unbounded array reads were removed.
 - unlocked account transaction submission was removed.
+- new integrations should inject `TransactionSigner`; `signer_private_key` is
+  retained only as a temporary compatibility path.
+- bytes32 query and event outputs are now canonical lowercase `0x` hex strings.
+- read operations validate provider connection, chain ID, and deployed bytecode
+  before querying.
 - hard-coded ABI strings were removed from Python source.
 - FastAPI demo endpoints are not part of the core module.
 - forensic watermark naming was replaced by transaction verification.
