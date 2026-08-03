@@ -73,6 +73,10 @@ jobs:
             fi
           done < <(git ls-files 'network/besu/scripts/*.sh')
           exit "$failed"
+      - name: Configure Besu runtime identity
+        run: |
+          echo "BESU_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "BESU_GID=$(id -g)" >> "$GITHUB_ENV"
       - name: Docker compose config
         run: docker compose --project-directory network/besu --env-file network/besu/.env.example config
       - name: Generate CI accounts
@@ -153,14 +157,23 @@ jobs:
       - name: Secret leakage guard
         run: |
           ! grep -R -E 'PRIVATE_KEY=.*0x[0-9a-fA-F]{64}|0xac0974|59c699' network/besu
+      - name: Collect Besu diagnostics on failure
+        if: failure()
+        run: |
+          mkdir -p network/besu/logs
+          docker compose --project-directory network/besu ps --all \
+            > network/besu/logs/compose-ps.txt
+          docker compose --project-directory network/besu logs --no-color \
+            > network/besu/logs/compose.log
+          if [ -f network/besu/build/static-nodes.json ]; then
+            cp network/besu/build/static-nodes.json network/besu/logs/static-nodes.json
+          fi
       - name: Stop network
         if: always()
         run: docker compose --project-directory network/besu down -v
-      - name: Collect Besu logs on failure
+      - name: Upload Besu diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: besu-network-debug
-          path: |
-            network/besu/logs
-            network/besu/build
+          path: network/besu/logs

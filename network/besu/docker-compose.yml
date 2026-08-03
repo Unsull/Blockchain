@@ -11,7 +11,7 @@ x-data-init: &data_init
   user: "0:0"
   restart: "no"
   entrypoint: ["/bin/sh", "-c"]
-  command: ["chown -R 1000:1000 /opt/besu/data"]
+  command: ["chown -R ${BESU_UID:-1000}:${BESU_GID:-1000} /opt/besu/data"]
   network_mode: none
   logging: *default_logging
 services:
@@ -42,7 +42,7 @@ services:
 
   validator-1:
     image: *besu_image
-    user: "1000:1000"
+    user: "${BESU_UID:-1000}:${BESU_GID:-1000}"
     restart: unless-stopped
     depends_on:
       validator-1-data-init:
@@ -63,7 +63,7 @@ services:
 
   validator-2:
     image: *besu_image
-    user: "1000:1000"
+    user: "${BESU_UID:-1000}:${BESU_GID:-1000}"
     restart: unless-stopped
     depends_on:
       validator-2-data-init:
@@ -84,7 +84,7 @@ services:
 
   validator-3:
     image: *besu_image
-    user: "1000:1000"
+    user: "${BESU_UID:-1000}:${BESU_GID:-1000}"
     restart: unless-stopped
     depends_on:
       validator-3-data-init:
@@ -105,7 +105,7 @@ services:
 
   validator-4:
     image: *besu_image
-    user: "1000:1000"
+    user: "${BESU_UID:-1000}:${BESU_GID:-1000}"
     restart: unless-stopped
     depends_on:
       validator-4-data-init:
@@ -126,7 +126,7 @@ services:
 
   rpc-node:
     image: *besu_image
-    user: "1000:1000"
+    user: "${BESU_UID:-1000}:${BESU_GID:-1000}"
     restart: unless-stopped
     command: ["--config-file=/opt/besu/config/config.toml"]
     depends_on:
