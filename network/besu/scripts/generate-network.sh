@@ -95,7 +95,10 @@ import secrets
 print(secrets.token_hex(32))
 PY
 chmod 0400 "${KEYS_DIR}/rpc-node/key"
-docker_run --rm -v "${KEYS_MOUNT}:/keys" "$BESU_IMAGE" public-key export-address \
+docker_run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "${KEYS_MOUNT}:/keys" \
+  "$BESU_IMAGE" public-key export-address \
   --node-private-key-file=/keys/rpc-node/key \
   --to=/keys/rpc-node/address >/dev/null
 
