@@ -26,5 +26,6 @@ python "${ROOT_DIR}/scripts/health-check.py" \
   --rpc-url "http://127.0.0.1:${RPC_HTTP_PORT:-8545}" \
   --expected-chain-id "${CHAIN_ID:-20260720}" \
   --min-peers "${MIN_PEERS:-3}" \
+  --peer-wait-seconds "${PEER_WAIT_SECONDS:-60}" \
   --block-wait-seconds "${BLOCK_WAIT_SECONDS:-15}"
 docker compose --project-directory "$ROOT_DIR" ps

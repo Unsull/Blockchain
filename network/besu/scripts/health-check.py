@@ -31,6 +31,7 @@ def main() -> None:
     parser.add_argument("--rpc-url", default="http://127.0.0.1:8545")
     parser.add_argument("--expected-chain-id", type=int, required=True)
     parser.add_argument("--min-peers", type=int, default=3)
+    parser.add_argument("--peer-wait-seconds", type=int, default=60)
     parser.add_argument("--block-wait-seconds", type=int, default=15)
     parser.add_argument("--max-block-age-seconds", type=int, default=60)
     args = parser.parse_args()
@@ -52,9 +53,16 @@ def main() -> None:
         raise SystemExit("block number did not increase")
     pass_line("Block production")
 
-    peer_count = int(rpc(args.rpc_url, "net_peerCount"), 16)
-    if peer_count < args.min_peers:
-        raise SystemExit(f"peer count too low: expected >= {args.min_peers}, got {peer_count}")
+    peer_deadline = time.monotonic() + args.peer_wait_seconds
+    while True:
+        peer_count = int(rpc(args.rpc_url, "net_peerCount"), 16)
+        if peer_count >= args.min_peers:
+            break
+        if time.monotonic() >= peer_deadline:
+            raise SystemExit(
+                f"peer count too low: expected >= {args.min_peers}, got {peer_count}"
+            )
+        time.sleep(2)
     pass_line("Peer count")
 
     syncing = rpc(args.rpc_url, "eth_syncing")
