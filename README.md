@@ -13,7 +13,8 @@ The module provides:
 - Foundry deployment and role-management scripts.
 - Python `blockchain_client` package for signed raw transactions, event decoding,
   state queries, and historical transaction verification.
-- Private network guidance for restricted Geth deployments.
+- Private network guidance and a Besu QBFT Docker Compose stack for integration
+  and staging.
 
 ## Out Of Scope
 
@@ -32,6 +33,39 @@ Backend systems derive opaque `bytes32` references and send them to this module:
 
 The contract stores `bytes32` values, block timestamps, and writer addresses.
 It never stores personally identifiable information or real case/file names.
+
+## Private Network Options
+
+Use Anvil for local unit and integration development. Use Besu QBFT for a
+private integration/staging EVM network.
+
+Besu QBFT stack:
+
+```text
+validator-1  validator-2  validator-3  validator-4
+     |            |            |            |
+     +------------+------------+------------+
+                  private QBFT P2P network
+                              |
+                           rpc-node
+                              |
+                backend / blockchain_client
+```
+
+The Besu stack is under `network/besu`, pins `hyperledger/besu:26.7.0`, disables
+validator RPC, binds RPC node HTTP to `127.0.0.1`, and exposes only `ETH`,
+`NET`, and `WEB3`.
+
+```powershell
+cd network/besu
+cp .env.example .env
+bash scripts/generate-network.sh --force
+bash scripts/start-network.sh
+```
+
+Do not call this production-ready until backup recovery, monitoring, security
+review, host deployment, and external signer validation have passed on the
+target environment.
 
 ## Contract API
 
@@ -303,10 +337,11 @@ foundryup
 forge --version
 ```
 
-On Windows PowerShell, the executable may also be available at:
+On Windows PowerShell, check whether the executable is on `PATH`:
 
 ```powershell
-C:\Users\kiadt\.foundry\bin\forge.exe --version
+where.exe forge
+forge --version
 ```
 
 ## Pull Request Workflow
@@ -331,6 +366,8 @@ GitHub Actions runs two jobs:
 - `solidity`: uses recursive submodules, Foundry `1.7.1`, then runs
   `forge fmt --check`, `forge build`, `forge test -vvv`, and gas report.
 - `python`: runs `ruff`, `mypy`, and `pytest -m "not integration" -vv`.
+- `besu-network`: validates the Besu Docker Compose and network scripts without
+  using real secrets.
 
 Wait for both jobs to pass:
 

@@ -1,12 +1,12 @@
 # Private Network Guidance
 
-This directory contains example-only private network material for integrating
-the blockchain module with a private EVM network. These files are templates, not
-production-ready infrastructure.
+This directory contains private network material for integrating the blockchain
+module with a private EVM network. The current integration/staging stack is
+`network/besu`, which uses Hyperledger Besu `26.7.0`, QBFT, four validators, and
+one separate RPC node.
 
-Pin the Geth version in deployment documentation before production use. The
-templates here are not a claim of multi-node production readiness; validate them
-against the exact Geth release and consensus mode used by the deployment.
+Legacy example files in this directory remain reference-only. Use
+`network/besu/README.md` for the maintained Docker Compose workflow.
 
 ## Topology
 
@@ -17,6 +17,18 @@ against the exact Geth release and consensus mode used by the deployment.
 - Backup procedure for node keys and chain data.
 - Firewall and RPC allowlist.
 - TLS or a reverse proxy for backend-to-RPC traffic.
+
+## Besu QBFT Quick Start
+
+```bash
+cd network/besu
+cp .env.example .env
+scripts/generate-network.sh --force
+scripts/start-network.sh
+```
+
+RPC binds to `127.0.0.1:${RPC_HTTP_PORT}` and exposes only `eth`, `net`, and
+`web3`.
 
 ## RPC Namespaces
 

@@ -23,14 +23,18 @@ compatibility and should not be used for new production integrations.
 ## RPC Exposure
 
 Expose only the RPC namespaces required by backend integration: `eth`, `net`,
-and `web3`. Do not expose `personal`, `admin`, `debug`, or `miner` to backend
-systems or external networks.
+and `web3`. Do not expose `personal`, `admin`, `debug`, `trace`, `txpool`,
+`qbft`, `perm`, or `miner` to backend systems or external networks.
+
+The Besu QBFT stack binds RPC to `127.0.0.1` on the Docker host. Validators have
+RPC disabled and use generated static peers with discovery disabled.
 
 ## Signer Security
 
 Use separate accounts for deployer, admin, pauser, backend writer, and
-validator/operator duties. Store admin keys offline when possible. Rotate writer
-keys by granting a new writer and revoking the old writer.
+validator/operator duties. Validator keys must not be reused as deployer,
+admin, pauser, or writer keys. Store admin keys offline when possible. Rotate
+writer keys by granting a new writer and revoking the old writer.
 
 Deployment automation should generate a manifest and verify bytecode, chain ID,
 contract address, and role assignments before enabling backend writes.
