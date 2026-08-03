@@ -37,6 +37,7 @@ def main() -> None:
         signer_private_key=writer_key,
         artifact_path=artifact_path,
         confirmation_blocks=int(os.getenv("MIN_CONFIRMATIONS", "1")),
+        proof_of_authority=True,
     )
     client = BlockchainClient(settings)
     client.validate_connection()

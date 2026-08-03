@@ -25,6 +25,7 @@ class BlockchainClientSettings:
     max_priority_fee_per_gas: int | None = None
     legacy_gas_price: int | None = None
     signer_private_key: str | None = None
+    proof_of_authority: bool = False
 
     def validate(self) -> None:
         if not self.provider_uri:

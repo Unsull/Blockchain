@@ -6,6 +6,7 @@ from typing import Any, cast
 
 from web3 import Web3
 from web3.exceptions import TimeExhausted
+from web3.middleware.geth_poa import geth_poa_middleware
 
 from blockchain_client.artifacts import load_contract_abi
 from blockchain_client.config import BlockchainClientSettings
@@ -41,6 +42,8 @@ class BlockchainClient:
         settings.validate()
         self.settings = settings
         self.web3 = web3 or Web3(Web3.HTTPProvider(settings.provider_uri))
+        if settings.proof_of_authority:
+            self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         if signer is None:
             if not settings.signer_private_key:
                 raise TransactionBuildError("signer is required when signer_private_key is not set")
