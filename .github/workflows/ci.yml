@@ -36,7 +36,7 @@ jobs:
 
   besu-network:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -153,7 +153,11 @@ jobs:
           set +a
           python network/besu/scripts/failure-test.py \
             --rpc-url "http://127.0.0.1:${RPC_HTTP_PORT}" \
-            --wait-seconds 12
+            --progress-timeout-seconds 90 \
+            --recovery-timeout-seconds 180 \
+            --halt-settle-seconds 10 \
+            --halt-observation-seconds 20 \
+            --poll-interval-seconds 2
       - name: Secret leakage guard
         run: |
           ! grep -R -E 'PRIVATE_KEY=.*0x[0-9a-fA-F]{64}|0xac0974|59c699' network/besu
