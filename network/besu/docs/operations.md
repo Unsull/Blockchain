@@ -8,6 +8,29 @@ cp .env.example .env
 scripts/generate-network.sh --force
 ```
 
+To repair only static peer endpoints while preserving validator identities and
+genesis, source the network environment and render from the existing keys:
+
+```bash
+set -a
+source .env
+set +a
+python scripts/render-static-nodes.py --keys-dir keys --output build/static-nodes.json
+python scripts/validate-generated-network.py --root . --expected-validators 4
+```
+
+For a new local or CI chain, fund public account addresses before the first
+start. This command never accepts or writes private keys:
+
+```bash
+python scripts/fund-genesis.py --genesis genesis/genesis.json \
+  --address 0xDEPLOYER_ADDRESS \
+  --address 0xADMIN_ADDRESS
+```
+
+Do not change `genesis.json` after chain data has been initialized. Existing
+data must continue to use the exact genesis from which it was created.
+
 Start and stop:
 
 ```bash
@@ -40,8 +63,8 @@ scripts/deploy-registry.sh
 
 Troubleshooting:
 
-- No peers: regenerate static nodes and confirm all containers share the Docker
-  network.
+- No peers: render static nodes from the existing public keys and confirm their
+  IPs match the Compose network.
 - Block not increasing: confirm at least three validators are online.
 - Wrong chain ID: reset data and regenerate with the intended chain ID.
 - RPC refused: check `rpc-node` health and localhost port binding.

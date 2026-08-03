@@ -85,6 +85,21 @@ jobs:
           source network/besu/.env.example
           set +a
           network/besu/scripts/generate-network.sh --force
+      - name: Fund ephemeral CI accounts
+        run: |
+          set -a
+          source /tmp/besu-ci-env
+          set +a
+          python network/besu/scripts/fund-genesis.py \
+            --genesis network/besu/genesis/genesis.json \
+            --address "${DEPLOYER_ADDRESS}" \
+            --address "${ADMIN_ADDRESS}" \
+            --address "${WRITER_ADDRESS}" \
+            --address "${PAUSER_ADDRESS}" \
+            --address "${UNAUTHORIZED_ADDRESS}"
+          python network/besu/scripts/validate-generated-network.py \
+            --root network/besu \
+            --expected-validators 4
       - name: Start network
         run: |
           set -a

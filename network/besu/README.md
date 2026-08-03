@@ -12,6 +12,8 @@ The Docker image is pinned as `hyperledger/besu:26.7.0`; do not use `latest`.
 cd network/besu
 cp .env.example .env
 scripts/generate-network.sh --force
+python scripts/fund-genesis.py --genesis genesis/genesis.json \
+  --address 0xYOUR_DEPLOYER_ADDRESS --address 0xYOUR_ADMIN_ADDRESS
 scripts/start-network.sh
 ```
 
@@ -36,6 +38,10 @@ validator-1  validator-2  validator-3  validator-4
 
 Validators have RPC disabled. The RPC node exposes `ETH`, `NET`, and `WEB3`
 only.
+
+`static-nodes.json` uses validator IPv4 addresses reserved by Compose IPAM.
+Changing node IPs requires rendering it again from the existing public keys;
+it does not require new validator keys or a new QBFT validator set.
 
 ## Commands
 
