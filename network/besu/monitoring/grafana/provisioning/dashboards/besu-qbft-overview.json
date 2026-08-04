@@ -1,0 +1,320 @@
+{
+  "annotations": {"list": []},
+  "description": "Integration/staging monitoring for the local Besu QBFT private network.",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Dashboard Scope and Limitations",
+      "description": "Operational scope and semantic limits for this integration/staging dashboard.",
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
+      "options": {
+        "mode": "markdown",
+        "content": "- The dashboard monitors the Besu QBFT integration/staging network.\n- Block height is not evidence count.\n- Chain-head transaction count is not cumulative transaction count.\n- Peer count is not QBFT quorum.\n- QBFT timer thread metrics are not validator-vote metrics.\n- Grafana is not a blockchain explorer.\n- Transaction correctness must be verified using transaction receipts, decoded events, and contract state."
+      }
+    },
+    {"id": 2, "type": "row", "title": "Network Overview", "description": "Direct target availability and current network state.", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}, "collapsed": false, "panels": []},
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Besu Nodes Online",
+      "description": "Number of Besu Prometheus targets currently reachable. Unit: nodes. This is direct metrics availability, not blockchain consensus quorum.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 0, "y": 6},
+      "targets": [{"refId": "A", "expr": "sum(up{job=\"besu\"})", "legendFormat": "nodes"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 4}, {"color": "green", "value": 5}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Validators Online",
+      "description": "Number of validator metrics endpoints reachable by Prometheus. Unit: validators. This does not directly prove participation in the current QBFT round.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 4, "y": 6},
+      "targets": [{"refId": "A", "expr": "sum(up{job=\"besu\",instance=~\"validator-[1-4]:9545\"})", "legendFormat": "validators"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 3}, {"color": "green", "value": 4}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "RPC Node Status",
+      "description": "Direct Prometheus scrape availability for the RPC node. Unit: state. UP confirms metrics reachability, not RPC transaction correctness.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 8, "y": 6},
+      "targets": [{"refId": "A", "expr": "up{job=\"besu\",instance=\"rpc-node:9545\"}", "legendFormat": "RPC"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Current Block Height",
+      "description": "Highest block height directly reported by monitored nodes. Unit: blocks. Block height is not evidence count or transaction count.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 12, "y": 6},
+      "targets": [{"refId": "A", "expr": "max(ethereum_blockchain_height{job=\"besu\"})", "legendFormat": "height"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "RPC Peer Count",
+      "description": "Direct P2P peers connected to the RPC node. Unit: peers. Peer count must not be interpreted as QBFT validator quorum.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 16, "y": 6},
+      "targets": [{"refId": "A", "expr": "ethereum_peer_count{job=\"besu\",instance=\"rpc-node:9545\"}", "legendFormat": "RPC peers"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Synchronization Status",
+      "description": "Direct Besu synchronizer state for the RPC node. Unit: state. Live Besu 26.7.0 observation verified 1 as IN SYNC and 0 as NOT IN SYNC; this is not a QBFT quorum signal.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 4, "x": 20, "y": 6},
+      "targets": [{"refId": "A", "expr": "besu_synchronizer_in_sync{job=\"besu\",instance=\"rpc-node:9545\"}", "legendFormat": "RPC sync"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "NOT IN SYNC", "color": "yellow"}, "1": {"text": "IN SYNC", "color": "green"}}}]}, "overrides": []},
+      "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {"id": 9, "type": "row", "title": "Blockchain Activity", "description": "Block progress and current transaction activity; no evidence totals are inferred.", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 11}, "collapsed": false, "panels": []},
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Block Height by Node",
+      "description": "Block height directly reported by each selected node. Unit: blocks. This is not evidence or transaction count.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "targets": [{"refId": "A", "expr": "ethereum_blockchain_height{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Block Production Rate",
+      "description": "Derived block-height increase over a rolling five-minute window. Unit: blocks/second. Startup and scrape gaps can affect the estimate.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "targets": [{"refId": "A", "expr": "rate(ethereum_blockchain_height{job=\"besu\",instance=~\"$instance\"}[5m])", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []}
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Estimated Average Block Interval",
+      "description": "Derived reciprocal of the five-minute block rate. Unit: seconds/block. A stall produces a very large value rather than a normal-looking interval; startup and scrape gaps can distort it.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "targets": [{"refId": "A", "expr": "1 / clamp_min(rate(ethereum_blockchain_height{job=\"besu\",instance=~\"$instance\"}[5m]), 0.000001)", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Transaction Pool Size",
+      "description": "Transactions directly reported as currently present in each selected node transaction pool. Unit: transactions; not a cumulative total.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 20},
+      "targets": [{"refId": "A", "expr": "besu_transaction_pool_number_of_transactions{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Transactions in Chain Head Block",
+      "description": "Transaction count directly reported for the current chain-head block. Unit: transactions/block. This is not a cumulative transaction or evidence total.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 20},
+      "targets": [{"refId": "A", "expr": "besu_blockchain_chain_head_transaction_count{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Active RPC HTTP Connections",
+      "description": "Current HTTP RPC connections directly reported by the RPC node. Unit: connections. It does not count completed requests or transactions.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 20},
+      "targets": [{"refId": "A", "expr": "besu_rpc_active_http_connection_count{job=\"besu\",instance=\"rpc-node:9545\"}", "legendFormat": "RPC connections"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {"id": 16, "type": "row", "title": "Node Resources", "description": "Direct Besu process and JVM resource telemetry.", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28}, "collapsed": false, "panels": []},
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Resident Memory by Node",
+      "description": "Resident memory directly used by each Besu process. Unit: IEC bytes. This is process memory, not total host memory.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 29},
+      "targets": [{"refId": "A", "expr": "process_resident_memory_bytes{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []}
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "JVM Memory Used",
+      "description": "Direct JVM memory usage split by node and memory area. Unit: IEC bytes. Heap and non-heap areas remain separate and are not summed.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 29},
+      "targets": [{"refId": "A", "expr": "jvm_memory_used_bytes{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}} {{area}}"}],
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []}
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Process CPU Usage",
+      "description": "Derived average CPU cores consumed by each Besu process during five minutes. Unit: CPU cores. This is not host CPU percentage.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 29},
+      "targets": [{"refId": "A", "expr": "rate(process_cpu_seconds_total{job=\"besu\",instance=~\"$instance\"}[5m])", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "cores"}, "overrides": []}
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "JVM Thread Count",
+      "description": "Current JVM threads directly reported per Besu process. Unit: threads. It does not indicate transaction concurrency or QBFT votes.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 37},
+      "targets": [{"refId": "A", "expr": "jvm_threads_current{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Open File Descriptors",
+      "description": "Open file descriptors directly reported by each Besu process. Unit: descriptors. Host-wide file usage is outside this metric.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 37},
+      "targets": [{"refId": "A", "expr": "process_open_fds{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Garbage Collection Rate",
+      "description": "Derived garbage-collection event rate over five minutes by collector and node. Unit: collections/second. Short windows can be bursty.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 37},
+      "targets": [{"refId": "A", "expr": "rate(jvm_gc_collection_seconds_count{job=\"besu\",instance=~\"$instance\"}[5m])", "legendFormat": "{{instance}} {{gc}}"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Garbage Collection Time",
+      "description": "Derived fraction of wall time spent in garbage collection over five minutes by collector and node. Unit: seconds/second; not total process pause time.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 45},
+      "targets": [{"refId": "A", "expr": "rate(jvm_gc_collection_seconds_sum{job=\"besu\",instance=~\"$instance\"}[5m])", "legendFormat": "{{instance}} {{gc}}"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    },
+    {"id": 24, "type": "row", "title": "Consensus and Network Health", "description": "Inferred health indicators and direct connectivity telemetry; no direct quorum metric is available.", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 53}, "collapsed": false, "panels": []},
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Block Height Divergence",
+      "description": "Difference between highest and lowest block heights. Unit: blocks. This is an inferred synchronization indicator, not direct QBFT quorum telemetry.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 7, "w": 6, "x": 0, "y": 54},
+      "targets": [{"refId": "A", "expr": "max(ethereum_blockchain_height{job=\"besu\"}) - min(ethereum_blockchain_height{job=\"besu\"})", "legendFormat": "blocks"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 2}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "Peer Count by Node",
+      "description": "Direct peer connections reported by each selected node. Unit: peers. It does not directly represent validator quorum.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 7, "w": 9, "x": 6, "y": 54},
+      "targets": [{"refId": "A", "expr": "ethereum_peer_count{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 27,
+      "type": "state-timeline",
+      "title": "Node Availability Timeline",
+      "description": "Direct Prometheus scrape availability by selected node. Unit: UP/DOWN state. Availability does not prove consensus participation.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 7, "w": 9, "x": 15, "y": 54},
+      "targets": [{"refId": "A", "expr": "up{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}]}, "overrides": []}
+    },
+    {
+      "id": 28,
+      "type": "stat",
+      "title": "Block Production Stalled",
+      "description": "Inferred stall state from no RPC-node block-height increase during one minute. Unit: state. The window covers multiple five-second blocks and fifteen-second scrapes; this is not direct QBFT telemetry.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 61},
+      "targets": [{"refId": "A", "expr": "increase(ethereum_blockchain_height{job=\"besu\",instance=\"rpc-node:9545\"}[1m]) == bool 0", "legendFormat": "stall"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "PRODUCING", "color": "green"}, "1": {"text": "STALLED", "color": "red"}}}]}, "overrides": []},
+      "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "id": 29,
+      "type": "timeseries",
+      "title": "QBFT Timer Executor Active Threads",
+      "description": "Direct internal executor thread activity associated with QBFT timers. Unit: threads. It does not indicate quorum, validator voting success, or consensus health.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 7, "w": 16, "x": 8, "y": 61},
+      "targets": [{"refId": "A", "expr": "besu_executors_bfttimerexecutor_qbft_active_threads_current{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {"id": 30, "type": "row", "title": "Monitoring Health", "description": "Prometheus scrape state and existing memory-alert threshold visibility.", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 68}, "collapsed": false, "panels": []},
+    {
+      "id": 31,
+      "type": "table",
+      "title": "Prometheus Target Scrape Status",
+      "description": "Current direct scrape status for each selected Besu target. Unit: binary state. It reports monitoring reachability only.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 69},
+      "targets": [{"refId": "A", "expr": "up{job=\"besu\",instance=~\"$instance\"}", "legendFormat": "{{instance}}", "format": "table", "instant": true}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}]}, "overrides": []}
+    },
+    {
+      "id": 32,
+      "type": "state-timeline",
+      "title": "JVM High Memory Alert State",
+      "description": "Derived state using the existing 1.5 GB resident-memory threshold. Unit: normal/high state. Sustained alerting remains governed by the Prometheus rule duration.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 69},
+      "targets": [{"refId": "A", "expr": "process_resident_memory_bytes{job=\"besu\",instance=~\"$instance\"} > bool 1500000000", "legendFormat": "{{instance}}"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "NORMAL", "color": "green"}, "1": {"text": "HIGH", "color": "red"}}}]}, "overrides": []}
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["besu", "qbft", "blockchain", "integration", "staging"],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "label": "Node",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": {"query": "label_values(up{job=\"besu\"}, instance)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "definition": "label_values(up{job=\"besu\"}, instance)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "refresh": 1,
+        "sort": 1
+      }
+    ]
+  },
+  "time": {"from": "now-30m", "to": "now"},
+  "timezone": "browser",
+  "title": "Besu QBFT Private Network Overview",
+  "uid": "besu-qbft-overview",
+  "version": 1
+}
