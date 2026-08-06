@@ -17,6 +17,7 @@ from blockchain_client.exceptions import (
     EventDecodeError,
     EventValidationError,
     NonceError,
+    SigningAccountRequiredError,
     TransactionBuildError,
     TransactionConfirmationTimeoutError,
     TransactionRevertedError,
@@ -44,12 +45,10 @@ class BlockchainClient:
         self.web3 = web3 or Web3(Web3.HTTPProvider(settings.provider_uri))
         if settings.proof_of_authority:
             self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        if signer is None:
-            if not settings.signer_private_key:
-                raise TransactionBuildError("signer is required when signer_private_key is not set")
+        if signer is None and settings.signer_private_key:
             signer = LocalPrivateKeySigner(settings.signer_private_key)
         self.signer = signer
-        self.nonce_manager = NonceManager(self.web3, self.signer.address)
+        self.nonce_manager = NonceManager(self.web3, signer.address) if signer else None
         self.abi = load_contract_abi(settings.artifact_path)
         self.contract = self.web3.eth.contract(
             address=self.web3.to_checksum_address(settings.contract_address),
@@ -92,13 +91,14 @@ class BlockchainClient:
     def record_evidence(self, evidence_ref: str, static_hash: str) -> TransactionResult:
         """Record a static evidence hash using opaque bytes32 references."""
 
+        signer, _ = self._require_signer()
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
         static = normalize_bytes32(static_hash, "static_hash")
         function = self.contract.functions.recordEvidence(evidence, static)
         return self._send_contract_transaction(
             function,
             "EvidenceRecorded",
-            {"evidenceRef": evidence, "staticHash": static, "writer": self.signer.address},
+            {"evidenceRef": evidence, "staticHash": static, "writer": signer.address},
         )
 
     def record_access(
@@ -109,6 +109,7 @@ class BlockchainClient:
     ) -> TransactionResult:
         """Record an access session using opaque bytes32 references."""
 
+        signer, _ = self._require_signer()
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
         officer = normalize_bytes32(officer_ref, "officer_ref")
         session = normalize_bytes32(access_session_ref, "access_session_ref")
@@ -120,7 +121,7 @@ class BlockchainClient:
                 "evidenceRef": evidence,
                 "officerRef": officer,
                 "accessSessionRef": session,
-                "writer": self.signer.address,
+                "writer": signer.address,
             },
         )
 
@@ -174,11 +175,12 @@ class BlockchainClient:
         expected_event_name: str,
         expected_args: dict[str, Any],
     ) -> TransactionResult:
+        signer, nonce_manager = self._require_signer()
         self.validate_connection()
         try:
-            nonce = self.nonce_manager.next_nonce()
+            nonce = nonce_manager.next_nonce()
             transaction = function.build_transaction(
-                {"from": self.signer.address, "chainId": self.settings.chain_id, "nonce": nonce}
+                {"from": signer.address, "chainId": self.settings.chain_id, "nonce": nonce}
             )
         except NonceError:
             raise
@@ -190,22 +192,22 @@ class BlockchainClient:
             transaction["gas"] = int(gas_estimate * self.settings.gas_estimate_multiplier)
             self._apply_fee_settings(transaction)
         except Exception as exc:
-            self.nonce_manager.reset()
+            nonce_manager.reset()
             raise TransactionBuildError("failed to estimate gas or apply fees") from exc
 
         try:
-            raw_transaction = self.signer.sign_transaction(transaction)
+            raw_transaction = signer.sign_transaction(transaction)
         except TransactionSigningError:
-            self.nonce_manager.reset()
+            nonce_manager.reset()
             raise
         except Exception as exc:
-            self.nonce_manager.reset()
+            nonce_manager.reset()
             raise TransactionSigningError("failed to sign transaction") from exc
 
         try:
             tx_hash = self.web3.eth.send_raw_transaction(raw_transaction)
         except Exception as exc:
-            self.nonce_manager.reset()
+            nonce_manager.reset()
             if self._is_nonce_error(exc):
                 raise NonceError("nonce conflict while submitting transaction") from exc
             raise TransactionSubmissionError("failed to submit signed transaction") from exc
@@ -240,6 +242,11 @@ class BlockchainClient:
             confirmations=confirmations,
             event=event,
         )
+
+    def _require_signer(self) -> tuple[TransactionSigner, NonceManager]:
+        if self.signer is None or self.nonce_manager is None:
+            raise SigningAccountRequiredError("a signing account is required for write operations")
+        return self.signer, self.nonce_manager
 
     def _apply_fee_settings(self, transaction: dict[str, Any]) -> None:
         if self.settings.legacy_gas_price is not None:

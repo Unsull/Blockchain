@@ -16,6 +16,11 @@ genesis.json;C/
 network/besu/build/
 network/besu/keys/
 network/besu/logs/
+network/besu/proofs/*.json
+network/besu/proofs/*.md
+network/besu/proofs/*.tmp
+network/besu/proofs/.*.tmp
+!network/besu/proofs/README.md
 network/besu/.env
 network/besu/genesis/genesis.json
 !network/besu/nodes/*/data/
@@ -28,3 +33,7 @@ network/besu/monitoring/grafana/data/
 **/key.pub
 **/nodekey
 **/nodekey.pub
+
+# Local Besu deployment and reset metadata
+network/besu/deployments/
+network/besu/backups/

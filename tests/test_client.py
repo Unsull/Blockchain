@@ -1,10 +1,12 @@
 from pathlib import Path
 from types import MethodType, SimpleNamespace
 
+import pytest
 from eth_account import Account
 from hexbytes import HexBytes
 
 from blockchain_client import BlockchainClient, BlockchainClientSettings
+from blockchain_client.exceptions import SigningAccountRequiredError
 
 
 def test_client_derives_signer_address() -> None:
@@ -60,3 +62,28 @@ def test_health_check_reports_disconnected_provider() -> None:
     assert health.connected is False
     assert health.chain_id is None
     assert health.contract_deployed is False
+
+
+def test_client_can_be_constructed_without_signer_for_verification() -> None:
+    settings = BlockchainClientSettings(
+        provider_uri="http://127.0.0.1:8545",
+        chain_id=31337,
+        contract_address="0x0000000000000000000000000000000000000001",
+        artifact_path=Path("tests/fixtures/EvidenceRegistry.json"),
+    )
+
+    client = BlockchainClient(settings)
+
+    assert client.signer is None
+    assert client.nonce_manager is None
+
+
+def test_write_methods_require_signer() -> None:
+    client = object.__new__(BlockchainClient)
+    client.signer = None
+    client.nonce_manager = None
+
+    with pytest.raises(SigningAccountRequiredError):
+        client.record_evidence("0x" + "11" * 32, "0x" + "22" * 32)
+    with pytest.raises(SigningAccountRequiredError):
+        client.record_access("0x" + "11" * 32, "0x" + "22" * 32, "0x" + "33" * 32)
