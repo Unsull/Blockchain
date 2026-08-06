@@ -8,14 +8,19 @@ from blockchain_client.models import (
     VerifiedAccess,
     VerifiedEvidence,
 )
+from blockchain_client.proof_builder import TransactionProofBuilder
+from blockchain_client.proof_models import AccessTransactionProof, EvidenceTransactionProof
 from blockchain_client.signer import LocalPrivateKeySigner, TransactionSigner
 
 __all__ = [
     "BlockchainClient",
     "BlockchainClientSettings",
     "BlockchainHealth",
+    "AccessTransactionProof",
+    "EvidenceTransactionProof",
     "LocalPrivateKeySigner",
     "TransactionResult",
+    "TransactionProofBuilder",
     "TransactionSigner",
     "VerifiedAccess",
     "VerifiedEvidence",

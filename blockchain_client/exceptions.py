@@ -29,6 +29,10 @@ class TransactionBuildError(BlockchainClientError):
     """Raised when a transaction cannot be built."""
 
 
+class SigningAccountRequiredError(TransactionBuildError):
+    """Raised when a write is attempted without a configured signer."""
+
+
 class TransactionSigningError(BlockchainClientError):
     """Raised when the signer cannot sign a transaction."""
 
