@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "name": "evidence-c1",
+      "operation": "recordEvidence",
+      "transaction_count": 20,
+      "concurrency": 1,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "evidence-c2",
+      "operation": "recordEvidence",
+      "transaction_count": 20,
+      "concurrency": 2,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "evidence-c5",
+      "operation": "recordEvidence",
+      "transaction_count": 20,
+      "concurrency": 5,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "evidence-c10",
+      "operation": "recordEvidence",
+      "transaction_count": 20,
+      "concurrency": 10,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "access-c1",
+      "operation": "recordAccess",
+      "transaction_count": 20,
+      "concurrency": 1,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "access-c2",
+      "operation": "recordAccess",
+      "transaction_count": 20,
+      "concurrency": 2,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "access-c5",
+      "operation": "recordAccess",
+      "transaction_count": 20,
+      "concurrency": 5,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "access-c10",
+      "operation": "recordAccess",
+      "transaction_count": 20,
+      "concurrency": 10,
+      "confirmations": 1,
+      "repetitions": 3
+    }
+  ]
+}
