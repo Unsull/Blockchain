@@ -37,3 +37,4 @@ network/besu/monitoring/grafana/data/
 # Local Besu deployment and reset metadata
 network/besu/deployments/
 network/besu/backups/
+network/besu/benchmarks/results/
