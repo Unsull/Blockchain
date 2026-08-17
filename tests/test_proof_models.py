@@ -29,6 +29,8 @@ def test_evidence_proof_to_dict_is_stable_json_compatible_and_canonical() -> Non
     assert first["transaction"]["block_hash"] == BLOCK_HASH
     assert first["transaction"]["from"] == WRITER
     assert first["decoded_call"]["evidence_ref"] == EVIDENCE_REF
+    assert "evidence_hash" in first["decoded_call"]
+    assert "uploader_ref" in first["decoded_call"]
     assert first["transaction"]["effective_gas_price"] is None
 
 

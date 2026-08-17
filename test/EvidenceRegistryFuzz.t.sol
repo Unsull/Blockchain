@@ -17,32 +17,39 @@ contract EvidenceRegistryFuzzTest is Test {
         registry.grantRole(writerRole, writer);
     }
 
-    function testFuzzRecordEvidence(bytes32 evidenceRef, bytes32 staticHash) public {
+    function testFuzzRecordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef)
+        public
+    {
         vm.assume(evidenceRef != bytes32(0));
-        vm.assume(staticHash != bytes32(0));
+        vm.assume(evidenceHash != bytes32(0));
+        vm.assume(uploaderRef != bytes32(0));
 
         vm.prank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
 
-        (bytes32 storedHash,, address storedWriter, bool exists) = registry.getEvidence(evidenceRef);
-        assertEq(storedHash, staticHash);
+        (bytes32 storedHash, bytes32 storedUploader,, address storedWriter, bool exists) =
+            registry.getEvidence(evidenceRef);
+        assertEq(storedHash, evidenceHash);
+        assertEq(storedUploader, uploaderRef);
         assertEq(storedWriter, writer);
         assertTrue(exists);
     }
 
     function testFuzzRecordAccess(
         bytes32 evidenceRef,
-        bytes32 staticHash,
+        bytes32 evidenceHash,
+        bytes32 uploaderRef,
         bytes32 officerRef,
         bytes32 accessSessionRef
     ) public {
         vm.assume(evidenceRef != bytes32(0));
-        vm.assume(staticHash != bytes32(0));
+        vm.assume(evidenceHash != bytes32(0));
+        vm.assume(uploaderRef != bytes32(0));
         vm.assume(officerRef != bytes32(0));
         vm.assume(accessSessionRef != bytes32(0));
 
         vm.startPrank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
         registry.recordAccess(evidenceRef, officerRef, accessSessionRef);
         vm.stopPrank();
 
@@ -58,10 +65,13 @@ contract EvidenceRegistryFuzzTest is Test {
 
         vm.startPrank(writer);
         vm.expectRevert(IEvidenceRegistry.InvalidEvidenceRef.selector);
-        registry.recordEvidence(bytes32(0), nonZero);
+        registry.recordEvidence(bytes32(0), nonZero, nonZero);
 
-        vm.expectRevert(IEvidenceRegistry.InvalidStaticHash.selector);
-        registry.recordEvidence(nonZero, bytes32(0));
+        vm.expectRevert(IEvidenceRegistry.InvalidEvidenceHash.selector);
+        registry.recordEvidence(nonZero, bytes32(0), nonZero);
+
+        vm.expectRevert(IEvidenceRegistry.InvalidUploaderRef.selector);
+        registry.recordEvidence(nonZero, nonZero, bytes32(0));
         vm.stopPrank();
     }
 }

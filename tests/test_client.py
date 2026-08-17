@@ -32,10 +32,11 @@ def test_get_evidence_validates_connection_before_query() -> None:
         calls.append("validated")
 
     class EvidenceCall:
-        def call(self) -> tuple[HexBytes, int, str, bool]:
+        def call(self) -> tuple[HexBytes, HexBytes, int, str, bool]:
             calls.append("queried")
             return (
                 HexBytes("0x" + "aa" * 32),
+                HexBytes("0x" + "bb" * 32),
                 1,
                 "0x0000000000000000000000000000000000000001",
                 True,
@@ -49,7 +50,8 @@ def test_get_evidence_validates_connection_before_query() -> None:
     result = client.get_evidence("0x" + "11" * 32)
 
     assert calls == ["validated", "queried"]
-    assert result["static_hash"] == "0x" + "aa" * 32
+    assert result["evidence_hash"] == "0x" + "aa" * 32
+    assert result["uploader_ref"] == "0x" + "bb" * 32
 
 
 def test_health_check_reports_disconnected_provider() -> None:
@@ -84,6 +86,10 @@ def test_write_methods_require_signer() -> None:
     client.nonce_manager = None
 
     with pytest.raises(SigningAccountRequiredError):
-        client.record_evidence("0x" + "11" * 32, "0x" + "22" * 32)
+        client.record_evidence(
+            "0x" + "11" * 32,
+            "0x" + "22" * 32,
+            "0x" + "33" * 32,
+        )
     with pytest.raises(SigningAccountRequiredError):
         client.record_access("0x" + "11" * 32, "0x" + "22" * 32, "0x" + "33" * 32)

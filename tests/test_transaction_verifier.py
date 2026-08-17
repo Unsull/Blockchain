@@ -20,7 +20,8 @@ OTHER_CONTRACT = "0x" + "45" * 20
 WRITER = "0x" + "33" * 20
 OTHER_WRITER = "0x" + "34" * 20
 EVIDENCE_REF = "0x" + "11" * 32
-STATIC_HASH = "0x" + "22" * 32
+EVIDENCE_HASH = "0x" + "22" * 32
+UPLOADER_REF = "0x" + "77" * 32
 OFFICER_REF = "0x" + "55" * 32
 SESSION_REF = "0x" + "66" * 32
 
@@ -45,10 +46,15 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
     }
     if operation == "evidence":
         function_name = "recordEvidence"
-        params = {"evidenceRef": HexBytes(EVIDENCE_REF), "staticHash": HexBytes(STATIC_HASH)}
+        params = {
+            "evidenceRef": HexBytes(EVIDENCE_REF),
+            "evidenceHash": HexBytes(EVIDENCE_HASH),
+            "uploaderRef": HexBytes(UPLOADER_REF),
+        }
         args = {
             "evidenceRef": HexBytes(EVIDENCE_REF),
-            "staticHash": HexBytes(STATIC_HASH),
+            "evidenceHash": HexBytes(EVIDENCE_HASH),
+            "uploaderRef": HexBytes(UPLOADER_REF),
             "writer": WRITER,
         }
         event_name = "EvidenceRecorded"
@@ -73,7 +79,12 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
         "args": args,
     }
     state = {
-        "evidence": {"static_hash": STATIC_HASH, "writer": WRITER, "exists": True},
+        "evidence": {
+            "evidence_hash": EVIDENCE_HASH,
+            "uploader_ref": UPLOADER_REF,
+            "writer": WRITER,
+            "exists": True,
+        },
         "access": {"evidence_ref": EVIDENCE_REF, "officer_ref": OFFICER_REF, "writer": WRITER},
     }
     data: dict[str, Any] = {
@@ -121,7 +132,8 @@ def test_successful_evidence_verification() -> None:
     verifier, _ = make_context()
     result = verifier.verify_evidence_transaction(TX_HASH.upper().replace("0X", "0x"))
     assert result.evidence_ref == EVIDENCE_REF
-    assert result.static_hash == STATIC_HASH
+    assert result.evidence_hash == EVIDENCE_HASH
+    assert result.uploader_ref == UPLOADER_REF
     assert result.confirmations == 2
 
 
@@ -205,7 +217,7 @@ def test_event_receipt_transaction_hash_mismatch() -> None:
 
 def test_input_event_mismatch() -> None:
     verifier = mutate_event(
-        lambda event: event["args"].update(staticHash=HexBytes("0x" + "23" * 32))
+        lambda event: event["args"].update(evidenceHash=HexBytes("0x" + "23" * 32))
     )
     with pytest.raises(TransactionVerificationError, match="event/input mismatch"):
         verifier.verify_evidence_transaction(TX_HASH)
@@ -219,6 +231,28 @@ def test_writer_sender_mismatch() -> None:
 
 def test_state_event_mismatch() -> None:
     verifier, data = make_context()
-    data["state"]["evidence"]["static_hash"] = "0x" + "24" * 32
+    data["state"]["evidence"]["evidence_hash"] = "0x" + "24" * 32
+    with pytest.raises(TransactionVerificationError, match="state/event mismatch"):
+        verifier.verify_evidence_transaction(TX_HASH)
+
+
+def test_uploader_event_input_mismatch() -> None:
+    verifier = mutate_event(
+        lambda event: event["args"].update(uploaderRef=HexBytes("0x" + "25" * 32))
+    )
+    with pytest.raises(TransactionVerificationError, match="event/input mismatch"):
+        verifier.verify_evidence_transaction(TX_HASH)
+
+
+def test_uploader_state_event_mismatch() -> None:
+    verifier, data = make_context()
+    data["state"]["evidence"]["uploader_ref"] = "0x" + "26" * 32
+    with pytest.raises(TransactionVerificationError, match="state/event mismatch"):
+        verifier.verify_evidence_transaction(TX_HASH)
+
+
+def test_missing_evidence_state_is_rejected() -> None:
+    verifier, data = make_context()
+    data["state"]["evidence"]["exists"] = False
     with pytest.raises(TransactionVerificationError, match="state/event mismatch"):
         verifier.verify_evidence_transaction(TX_HASH)

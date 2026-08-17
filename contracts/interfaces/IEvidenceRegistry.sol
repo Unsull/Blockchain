@@ -3,7 +3,10 @@ pragma solidity 0.8.24;
 
 interface IEvidenceRegistry {
     struct EvidenceRecord {
-        bytes32 staticHash;
+        // Blockchain integration: evidenceHash replaces the legacy staticHash anchor.
+        bytes32 evidenceHash;
+        // Blockchain integration: uploaderRef links the anchor to its custody source.
+        bytes32 uploaderRef;
         uint64 recordedAt;
         address writer;
         bool exists;
@@ -18,7 +21,10 @@ interface IEvidenceRegistry {
 
     error InvalidAdminAddress();
     error InvalidEvidenceRef();
-    error InvalidStaticHash();
+
+    // Blockchain integration: replaces the legacy InvalidStaticHash validation.
+    error InvalidEvidenceHash();
+    error InvalidUploaderRef();
     error InvalidOfficerRef();
     error InvalidAccessSessionRef();
     error EvidenceAlreadyExists(bytes32 evidenceRef);
@@ -27,7 +33,11 @@ interface IEvidenceRegistry {
     error AccessSessionNotFound(bytes32 accessSessionRef);
 
     event EvidenceRecorded(
-        bytes32 indexed evidenceRef, bytes32 staticHash, uint64 recordedAt, address indexed writer
+        bytes32 indexed evidenceRef,
+        bytes32 evidenceHash,
+        bytes32 indexed uploaderRef,
+        uint64 recordedAt,
+        address indexed writer
     );
 
     event EvidenceAccessRecorded(
@@ -38,7 +48,7 @@ interface IEvidenceRegistry {
         address writer
     );
 
-    function recordEvidence(bytes32 evidenceRef, bytes32 staticHash) external;
+    function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef) external;
 
     function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef)
         external;
@@ -46,7 +56,13 @@ interface IEvidenceRegistry {
     function getEvidence(bytes32 evidenceRef)
         external
         view
-        returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists);
+        returns (
+            bytes32 evidenceHash,
+            bytes32 uploaderRef,
+            uint64 recordedAt,
+            address writer,
+            bool exists
+        );
 
     function getAccessBySession(bytes32 accessSessionRef)
         external

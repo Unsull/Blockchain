@@ -114,7 +114,9 @@ def execute(args: argparse.Namespace) -> TransactionProof:
         return builder.build_access_proof(args.tx_hash)
     if args.command == "record-evidence":
         result = client.record_evidence(
-            synthetic_bytes32("evidence"), synthetic_bytes32("static-hash")
+            synthetic_bytes32("evidence"),
+            synthetic_bytes32("evidence-hash"),
+            synthetic_bytes32("uploader"),
         )
         return builder.build_evidence_proof(result.tx_hash)
     if args.command == "record-access":

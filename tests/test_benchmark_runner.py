@@ -31,7 +31,7 @@ class FakeWeb3:
 class FakeClient:
     def __init__(self) -> None:
         self.web3 = FakeWeb3()
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[str, str, str]] = []
         self.access_calls: list[tuple[str, str, str]] = []
         self.fail_sequences: set[int] = set()
         self._lock = Lock()
@@ -40,7 +40,8 @@ class FakeClient:
     def record_evidence(
         self,
         evidence_ref: str,
-        static_hash: str,
+        evidence_hash: str,
+        uploader_ref: str,
     ) -> TransactionResult:
         with self._lock:
             self._sequence += 1
@@ -49,7 +50,8 @@ class FakeClient:
             self.calls.append(
                 (
                     evidence_ref,
-                    static_hash,
+                    evidence_hash,
+                    uploader_ref,
                 )
             )
 
@@ -266,7 +268,8 @@ class ConcurrentFakeClient(FakeClient):
     def record_evidence(
         self,
         evidence_ref: str,
-        static_hash: str,
+        evidence_hash: str,
+        uploader_ref: str,
     ) -> TransactionResult:
         with self._lock:
             self.active_calls += 1
@@ -279,7 +282,8 @@ class ConcurrentFakeClient(FakeClient):
             sleep(0.02)
             return super().record_evidence(
                 evidence_ref,
-                static_hash,
+                evidence_hash,
+                uploader_ref,
             )
         finally:
             with self._lock:

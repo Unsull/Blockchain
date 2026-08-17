@@ -120,7 +120,8 @@ class EvidenceTransactionProof:
     transaction: TransactionMetadata
     function_name: str
     evidence_ref: str
-    static_hash: str
+    evidence_hash: str
+    uploader_ref: str
     writer_address: str
     checks: VerificationChecks
 
@@ -129,7 +130,8 @@ class EvidenceTransactionProof:
         if self.function_name != "recordEvidence":
             raise ValueError("evidence proof function must be recordEvidence")
         object.__setattr__(self, "evidence_ref", bytes32_to_hex(self.evidence_ref))
-        object.__setattr__(self, "static_hash", bytes32_to_hex(self.static_hash))
+        object.__setattr__(self, "evidence_hash", bytes32_to_hex(self.evidence_hash))
+        object.__setattr__(self, "uploader_ref", bytes32_to_hex(self.uploader_ref))
         object.__setattr__(
             self, "writer_address", _canonical_address(self.writer_address, "writer_address")
         )
@@ -145,7 +147,8 @@ class EvidenceTransactionProof:
             "decoded_call": {
                 "function_name": self.function_name,
                 "evidence_ref": self.evidence_ref,
-                "static_hash": self.static_hash,
+                "evidence_hash": self.evidence_hash,
+                "uploader_ref": self.uploader_ref,
             },
             "writer_address": self.writer_address,
             "checks": self.checks.to_dict(),

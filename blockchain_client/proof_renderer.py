@@ -53,7 +53,12 @@ def proof_to_markdown(proof: TransactionProof) -> str:
             ]
         )
     else:
-        decoded.append(f"- Static hash: `{proof.static_hash}`")
+        decoded.extend(
+            [
+                f"- Evidence hash: `{proof.evidence_hash}`",
+                f"- Uploader reference: `{proof.uploader_ref}`",
+            ]
+        )
 
     labels = {
         "transaction_found": "Transaction found",

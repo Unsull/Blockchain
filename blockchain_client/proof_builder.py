@@ -41,7 +41,8 @@ class TransactionProofBuilder:
             transaction=self._transaction(tx, receipt, block, verified.confirmations),
             function_name=function_name,
             evidence_ref=bytes32_to_hex(params["evidenceRef"]),
-            static_hash=bytes32_to_hex(params["staticHash"]),
+            evidence_hash=bytes32_to_hex(params["evidenceHash"]),
+            uploader_ref=bytes32_to_hex(params["uploaderRef"]),
             writer_address=verified.writer,
             checks=self._successful_checks(),
         )

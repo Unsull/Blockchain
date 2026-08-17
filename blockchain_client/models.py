@@ -30,11 +30,42 @@ class BlockchainHealth:
 
 
 @dataclass(frozen=True)
+class EvidenceRecordedEvent:
+    """Canonical EvidenceRecorded custody event."""
+
+    evidence_ref: str
+    evidence_hash: str
+    uploader_ref: str
+    recorded_at: int
+    writer: str
+    tx_hash: str
+    block_number: int
+    transaction_index: int
+    log_index: int
+
+
+@dataclass(frozen=True)
+class EvidenceAccessEvent:
+    """Canonical EvidenceAccessRecorded custody event."""
+
+    evidence_ref: str
+    officer_ref: str
+    access_session_ref: str
+    recorded_at: int
+    writer: str
+    tx_hash: str
+    block_number: int
+    transaction_index: int
+    log_index: int
+
+
+@dataclass(frozen=True)
 class VerifiedEvidence:
     """Verified recordEvidence transaction details."""
 
     evidence_ref: str
-    static_hash: str
+    evidence_hash: str
+    uploader_ref: str
     tx_hash: str
     block_number: int
     block_timestamp: datetime

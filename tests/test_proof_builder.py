@@ -12,7 +12,14 @@ from blockchain_client.config import BlockchainClientSettings
 from blockchain_client.exceptions import TransactionVerificationError
 from blockchain_client.models import VerifiedAccess, VerifiedEvidence
 from blockchain_client.proof_builder import TransactionProofBuilder
-from tests.proof_fixtures import CONTRACT, EVIDENCE_REF, STATIC_HASH, TX_HASH, WRITER
+from tests.proof_fixtures import (
+    CONTRACT,
+    EVIDENCE_HASH,
+    EVIDENCE_REF,
+    TX_HASH,
+    UPLOADER_REF,
+    WRITER,
+)
 
 OFFICER_REF = "0x" + "55" * 32
 SESSION_REF = "0x" + "66" * 32
@@ -29,7 +36,8 @@ class FakeVerifier:
             raise TransactionVerificationError("verification failed")
         return VerifiedEvidence(
             EVIDENCE_REF,
-            STATIC_HASH,
+            EVIDENCE_HASH,
+            UPLOADER_REF,
             TX_HASH,
             100,
             datetime(2026, 8, 6, tzinfo=UTC),
@@ -59,7 +67,8 @@ def make_client(operation: str) -> Any:
     function_name = "recordEvidence" if operation == "evidence" else "recordAccess"
     params = {"evidenceRef": HexBytes(EVIDENCE_REF)}
     if operation == "evidence":
-        params["staticHash"] = HexBytes(STATIC_HASH)
+        params["evidenceHash"] = HexBytes(EVIDENCE_HASH)
+        params["uploaderRef"] = HexBytes(UPLOADER_REF)
     else:
         params["officerRef"] = HexBytes(OFFICER_REF)
         params["accessSessionRef"] = HexBytes(SESSION_REF)
@@ -102,6 +111,8 @@ def test_build_evidence_proof_collects_metadata_after_verification() -> None:
     assert verifier.calls == ["verify-evidence"]
     assert proof.function_name == "recordEvidence"
     assert proof.evidence_ref == EVIDENCE_REF
+    assert proof.evidence_hash == EVIDENCE_HASH
+    assert proof.uploader_ref == UPLOADER_REF
     assert proof.transaction.gas_used == 75000
     assert proof.transaction.effective_gas_price == 7
     assert proof.checks.all_passed()

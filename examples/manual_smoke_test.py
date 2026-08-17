@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import hashlib
 import os
+from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
-from blockchain_client import BlockchainClient, BlockchainClientSettings
-
-
-def to_bytes32(value: str) -> str:
-    """Create a deterministic non-zero bytes32 reference."""
-    return "0x" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+from blockchain_client import (
+    BlockchainClient,
+    BlockchainClientSettings,
+    derive_access_session_ref,
+    derive_actor_ref,
+    derive_evidence_ref,
+)
 
 
 def main() -> None:
@@ -32,16 +33,17 @@ def main() -> None:
     client = BlockchainClient(settings)
     client.validate_connection()
 
-    run_id = uuid4().hex
-
-    evidence_ref = to_bytes32(f"evidence:{run_id}")
-    static_hash = to_bytes32(f"static-file-content:{run_id}")
-    officer_ref = to_bytes32("officer:local-test-001")
-    access_session_ref = to_bytes32(f"access-session:{run_id}")
+    evidence_id = uuid4()
+    evidence_ref = derive_evidence_ref(evidence_id)
+    evidence_hash = "0x" + sha256(b"manual-smoke:" + evidence_id.bytes).hexdigest()
+    uploader_ref = derive_actor_ref(uuid4())
+    officer_ref = derive_actor_ref(uuid4())
+    access_session_ref = derive_access_session_ref(uuid4())
 
     evidence_tx = client.record_evidence(
         evidence_ref=evidence_ref,
-        static_hash=static_hash,
+        evidence_hash=evidence_hash,
+        uploader_ref=uploader_ref,
     )
     print("Evidence transaction:")
     print(evidence_tx)

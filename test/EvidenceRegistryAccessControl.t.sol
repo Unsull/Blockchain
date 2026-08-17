@@ -10,7 +10,8 @@ contract EvidenceRegistryAccessControlTest is Test {
     address internal writer = address(0xB0B);
     address internal pauser = address(0xCAFE);
     bytes32 internal evidenceRef = keccak256("evidence");
-    bytes32 internal staticHash = keccak256("static");
+    bytes32 internal evidenceHash = keccak256("evidence-hash");
+    bytes32 internal uploaderRef = keccak256("uploader");
 
     function setUp() public {
         registry = new EvidenceRegistry(admin);
@@ -43,7 +44,7 @@ contract EvidenceRegistryAccessControlTest is Test {
 
         vm.prank(writer);
         vm.expectRevert();
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
     }
 
     function testPauserCanPauseAndUnpause() public {
@@ -75,6 +76,6 @@ contract EvidenceRegistryAccessControlTest is Test {
 
         vm.prank(writer);
         vm.expectRevert();
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
     }
 }

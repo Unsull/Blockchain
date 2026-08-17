@@ -10,10 +10,15 @@ contract EvidenceRegistryTest is Test {
     address internal admin = address(0xA11CE);
     address internal writer = address(0xB0B);
     bytes32 internal evidenceRef = keccak256("evidence");
-    bytes32 internal staticHash = keccak256("static");
+    bytes32 internal evidenceHash = keccak256("evidence-hash");
+    bytes32 internal uploaderRef = keccak256("uploader");
 
     event EvidenceRecorded(
-        bytes32 indexed evidenceRef, bytes32 staticHash, uint64 recordedAt, address indexed writer
+        bytes32 indexed evidenceRef,
+        bytes32 evidenceHash,
+        bytes32 indexed uploaderRef,
+        uint64 recordedAt,
+        address indexed writer
     );
 
     event EvidenceAccessRecorded(
@@ -43,15 +48,23 @@ contract EvidenceRegistryTest is Test {
 
     function testWriterRecordsEvidence() public {
         vm.warp(1_700_000_000);
-        vm.expectEmit(true, false, false, true);
-        emit EvidenceRecorded(evidenceRef, staticHash, uint64(block.timestamp), writer);
+        vm.expectEmit(true, true, true, true);
+        emit EvidenceRecorded(
+            evidenceRef, evidenceHash, uploaderRef, uint64(block.timestamp), writer
+        );
 
         vm.prank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
 
-        (bytes32 storedHash, uint64 recordedAt, address storedWriter, bool exists) =
-            registry.getEvidence(evidenceRef);
-        assertEq(storedHash, staticHash);
+        (
+            bytes32 storedHash,
+            bytes32 storedUploader,
+            uint64 recordedAt,
+            address storedWriter,
+            bool exists
+        ) = registry.getEvidence(evidenceRef);
+        assertEq(storedHash, evidenceHash);
+        assertEq(storedUploader, uploaderRef);
         assertEq(recordedAt, uint64(block.timestamp));
         assertEq(storedWriter, writer);
         assertTrue(exists);
@@ -60,28 +73,34 @@ contract EvidenceRegistryTest is Test {
 
     function testRejectsUnauthorizedEvidenceWrite() public {
         vm.expectRevert();
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
     }
 
     function testRejectsZeroEvidenceRef() public {
         vm.prank(writer);
         vm.expectRevert(IEvidenceRegistry.InvalidEvidenceRef.selector);
-        registry.recordEvidence(bytes32(0), staticHash);
+        registry.recordEvidence(bytes32(0), evidenceHash, uploaderRef);
     }
 
-    function testRejectsZeroStaticHash() public {
+    function testRejectsZeroEvidenceHash() public {
         vm.prank(writer);
-        vm.expectRevert(IEvidenceRegistry.InvalidStaticHash.selector);
-        registry.recordEvidence(evidenceRef, bytes32(0));
+        vm.expectRevert(IEvidenceRegistry.InvalidEvidenceHash.selector);
+        registry.recordEvidence(evidenceRef, bytes32(0), uploaderRef);
+    }
+
+    function testRejectsZeroUploaderRef() public {
+        vm.prank(writer);
+        vm.expectRevert(IEvidenceRegistry.InvalidUploaderRef.selector);
+        registry.recordEvidence(evidenceRef, evidenceHash, bytes32(0));
     }
 
     function testRejectsDuplicateEvidenceRef() public {
         vm.startPrank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
         vm.expectRevert(
             abi.encodeWithSelector(IEvidenceRegistry.EvidenceAlreadyExists.selector, evidenceRef)
         );
-        registry.recordEvidence(evidenceRef, keccak256("new"));
+        registry.recordEvidence(evidenceRef, keccak256("new"), uploaderRef);
         vm.stopPrank();
     }
 
@@ -89,7 +108,7 @@ contract EvidenceRegistryTest is Test {
         bytes32 officerRef = keccak256("officer");
         bytes32 accessSessionRef = keccak256("session");
         vm.prank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
 
         vm.warp(1_700_000_100);
         vm.expectEmit(true, true, true, true);
@@ -121,7 +140,7 @@ contract EvidenceRegistryTest is Test {
     function testRejectsDuplicateAccessSession() public {
         bytes32 accessSessionRef = keccak256("session");
         vm.startPrank(writer);
-        registry.recordEvidence(evidenceRef, staticHash);
+        registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
         registry.recordAccess(evidenceRef, keccak256("officer"), accessSessionRef);
         vm.expectRevert(
             abi.encodeWithSelector(

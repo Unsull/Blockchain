@@ -13,7 +13,8 @@ from blockchain_client.proof_models import (
 TX_HASH = "0x" + "ab" * 32
 BLOCK_HASH = "0x" + "cd" * 32
 EVIDENCE_REF = "0x" + "11" * 32
-STATIC_HASH = "0x" + "22" * 32
+EVIDENCE_HASH = "0x" + "22" * 32
+UPLOADER_REF = "0x" + "77" * 32
 WRITER = "0x" + "33" * 20
 CONTRACT = "0x" + "44" * 20
 
@@ -43,7 +44,8 @@ def evidence_proof() -> EvidenceTransactionProof:
         ),
         function_name="recordEvidence",
         evidence_ref=EVIDENCE_REF.upper().replace("0X", "0x"),
-        static_hash=STATIC_HASH.upper().replace("0X", "0x"),
+        evidence_hash=EVIDENCE_HASH.upper().replace("0X", "0x"),
+        uploader_ref=UPLOADER_REF.upper().replace("0X", "0x"),
         writer_address=WRITER.upper().replace("0X", "0x"),
         checks=successful_checks(),
     )

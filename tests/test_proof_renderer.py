@@ -24,6 +24,8 @@ def test_renderer_produces_valid_json_and_required_markdown() -> None:
     assert "## Verification Checks" in markdown
     assert "## Interpretation" in markdown
     assert "## Reproduction Information" in markdown
+    assert "Evidence hash" in markdown
+    assert "Uploader reference" in markdown
     assert markdown.count("| PASS |") == 9
     assert "datetime.datetime" not in markdown
 
