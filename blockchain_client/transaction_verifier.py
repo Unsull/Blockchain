@@ -32,21 +32,28 @@ class TransactionVerifier:
         event = self._single_event(receipt, "EvidenceRecorded")
         self._assert_log_metadata(event, receipt)
         evidence_ref = bytes32_to_hex(params["evidenceRef"])
-        static_hash = bytes32_to_hex(params["staticHash"])
+        evidence_hash = bytes32_to_hex(params["evidenceHash"])
+        uploader_ref = bytes32_to_hex(params["uploaderRef"])
         if (
             bytes32_to_hex(event["evidenceRef"]) != evidence_ref
-            or bytes32_to_hex(event["staticHash"]) != static_hash
+            or bytes32_to_hex(event["evidenceHash"]) != evidence_hash
+            or bytes32_to_hex(event["uploaderRef"]) != uploader_ref
         ):
             raise TransactionVerificationError("event/input mismatch")
         self._assert_writer(tx, event)
 
         state = self.client.get_evidence(evidence_ref)
-        if state["static_hash"] != static_hash:
+        if (
+            state["evidence_hash"] != evidence_hash
+            or state["uploader_ref"] != uploader_ref
+            or state["exists"] is not True
+        ):
             raise TransactionVerificationError("state/event mismatch")
 
         return VerifiedEvidence(
             evidence_ref=evidence_ref,
-            static_hash=static_hash,
+            evidence_hash=evidence_hash,
+            uploader_ref=uploader_ref,
             tx_hash=normalized,
             block_number=receipt["blockNumber"],
             block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),

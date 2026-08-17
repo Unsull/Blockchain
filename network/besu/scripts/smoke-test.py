@@ -1,20 +1,22 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import subprocess
+from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
-from blockchain_client import BlockchainClient, BlockchainClientSettings
+from blockchain_client import (
+    BlockchainClient,
+    BlockchainClientSettings,
+    derive_access_session_ref,
+    derive_actor_ref,
+    derive_evidence_ref,
+)
 from blockchain_client.transaction_verifier import TransactionVerifier
 
 ROOT = Path(__file__).resolve().parents[3]
-
-
-def to_bytes32(value: str) -> str:
-    return "0x" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def run(command: list[str], env: dict[str, str]) -> None:
@@ -42,28 +44,63 @@ def main() -> None:
     client = BlockchainClient(settings)
     client.validate_connection()
 
-    run_id = uuid4().hex
-    evidence_ref = to_bytes32(f"besu:evidence:{run_id}")
-    static_hash = to_bytes32(f"besu:static:{run_id}")
-    officer_ref = to_bytes32(f"besu:officer:{run_id}")
-    access_session_ref = to_bytes32(f"besu:session:{run_id}")
+    evidence_id = uuid4()
+    uploader_id = uuid4()
+    officer_id = uuid4()
+    access_log_id = uuid4()
+    # Blockchain integration:
+    # Runtime smoke uses the same canonical references that the Capstone backend
+    # will use after repository integration.
+    evidence_ref = derive_evidence_ref(evidence_id)
+    evidence_hash = "0x" + sha256(b"besu-v2-smoke:" + evidence_id.bytes).hexdigest()
+    uploader_ref = derive_actor_ref(uploader_id)
+    officer_ref = derive_actor_ref(officer_id)
+    access_session_ref = derive_access_session_ref(access_log_id)
 
-    evidence_result = client.record_evidence(evidence_ref, static_hash)
+    evidence_result = client.record_evidence(evidence_ref, evidence_hash, uploader_ref)
+    evidence = client.get_evidence(evidence_ref)
+    assert evidence["evidence_hash"] == evidence_hash
+    assert evidence["uploader_ref"] == uploader_ref
+    evidence_event = client.get_evidence_record_event(
+        evidence_ref,
+        from_block=evidence_result.block_number,
+    )
+    assert evidence_event is not None
+    assert evidence_event.evidence_hash == evidence_hash
+    assert evidence_event.uploader_ref == uploader_ref
+    assert evidence_event.tx_hash == evidence_result.tx_hash
+
     access_result = client.record_access(evidence_ref, officer_ref, access_session_ref)
-    assert client.get_evidence(evidence_ref)["static_hash"] == static_hash
     access = client.get_access_by_session(access_session_ref)
     assert access["evidence_ref"] == evidence_ref
     assert access["officer_ref"] == officer_ref
+    access_events = client.list_access_events(
+        evidence_ref,
+        from_block=access_result.block_number,
+    )
+    assert any(event.access_session_ref == access_session_ref for event in access_events)
+    access_event = client.get_access_event_by_session(
+        access_session_ref,
+        from_block=access_result.block_number,
+    )
+    assert access_event is not None
+    assert access_event.evidence_ref == evidence_ref
+    assert access_event.officer_ref == officer_ref
+    assert access_event.tx_hash == access_result.tx_hash
 
     verifier = TransactionVerifier(client)
-    verifier.verify_evidence_transaction(evidence_result.tx_hash)
-    verifier.verify_access_transaction(access_result.tx_hash)
+    evidence_proof = verifier.verify_evidence_transaction(evidence_result.tx_hash)
+    access_proof = verifier.verify_access_transaction(access_result.tx_hash)
+    assert evidence_proof.status == "verified"
+    assert access_proof.status == "verified"
 
     print(
         json.dumps(
             {
                 "record_evidence_tx": evidence_result.tx_hash,
                 "record_access_tx": access_result.tx_hash,
+                "record_evidence_block": evidence_result.block_number,
+                "record_access_block": access_result.block_number,
                 "contract_address": contract_address,
             },
             indent=2,

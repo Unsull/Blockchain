@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 from time import monotonic, sleep
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from web3 import Web3
 from web3.exceptions import TimeExhausted
@@ -25,9 +25,14 @@ from blockchain_client.exceptions import (
     TransactionSubmissionError,
     TransactionTimeoutError,
 )
-from blockchain_client.models import BlockchainHealth, TransactionResult
+from blockchain_client.models import (
+    BlockchainHealth,
+    EvidenceAccessEvent,
+    EvidenceRecordedEvent,
+    TransactionResult,
+)
 from blockchain_client.nonce import NonceManager
-from blockchain_client.references import bytes32_to_hex, normalize_bytes32
+from blockchain_client.references import bytes32_to_hex, normalize_bytes32, normalize_tx_hash
 from blockchain_client.signer import LocalPrivateKeySigner, TransactionSigner
 
 
@@ -88,17 +93,31 @@ class BlockchainClient:
             contract_deployed=deployed,
         )
 
-    def record_evidence(self, evidence_ref: str, static_hash: str) -> TransactionResult:
-        """Record a static evidence hash using opaque bytes32 references."""
+    def record_evidence(
+        self,
+        evidence_ref: str,
+        evidence_hash: str,
+        uploader_ref: str,
+    ) -> TransactionResult:
+        """Record an evidence anchor and its application uploader identity."""
 
         signer, _ = self._require_signer()
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
-        static = normalize_bytes32(static_hash, "static_hash")
-        function = self.contract.functions.recordEvidence(evidence, static)
+        # Blockchain integration:
+        # evidenceHash anchors the original evidence bytes while uploaderRef records
+        # the application-level uploader identity separately from the backend wallet.
+        evidence_digest = normalize_bytes32(evidence_hash, "evidence_hash")
+        uploader = normalize_bytes32(uploader_ref, "uploader_ref")
+        function = self.contract.functions.recordEvidence(evidence, evidence_digest, uploader)
         return self._send_contract_transaction(
             function,
             "EvidenceRecorded",
-            {"evidenceRef": evidence, "staticHash": static, "writer": signer.address},
+            {
+                "evidenceRef": evidence,
+                "evidenceHash": evidence_digest,
+                "uploaderRef": uploader,
+                "writer": signer.address,
+            },
         )
 
     def record_access(
@@ -130,11 +149,12 @@ class BlockchainClient:
 
         self.validate_connection()
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
-        static_hash, recorded_at, writer, exists = (
+        evidence_hash, uploader_ref, recorded_at, writer, exists = (
             self.contract.functions.getEvidence(evidence).call()
         )
         return {
-            "static_hash": bytes32_to_hex(static_hash),
+            "evidence_hash": bytes32_to_hex(evidence_hash),
+            "uploader_ref": bytes32_to_hex(uploader_ref),
             "recorded_at": recorded_at,
             "writer": writer,
             "exists": exists,
@@ -155,6 +175,87 @@ class BlockchainClient:
             "writer": writer,
         }
 
+    def get_evidence_record_event(
+        self,
+        evidence_ref: str,
+        from_block: int = 0,
+        to_block: int | Literal["latest"] = "latest",
+    ) -> EvidenceRecordedEvent | None:
+        """Return the unique EvidenceRecorded log for an evidence reference."""
+
+        self.validate_connection()
+        evidence = normalize_bytes32(evidence_ref, "evidence_ref")
+        event_reader = cast(Any, self.contract.events.EvidenceRecorded())
+        logs = list(
+            event_reader.get_logs(
+                argument_filters={"evidenceRef": evidence},
+                fromBlock=from_block,
+                toBlock=to_block,
+            )
+        )
+        if not logs:
+            return None
+        if len(logs) != 1:
+            raise EventValidationError(
+                "expected at most one EvidenceRecorded event for evidence_ref"
+            )
+        return self._evidence_recorded_event(logs[0])
+
+    def list_access_events(
+        self,
+        evidence_ref: str,
+        from_block: int = 0,
+        to_block: int | Literal["latest"] = "latest",
+    ) -> list[EvidenceAccessEvent]:
+        """List custody access logs for an evidence reference."""
+
+        self.validate_connection()
+        evidence = normalize_bytes32(evidence_ref, "evidence_ref")
+        # Blockchain integration:
+        # Event logs provide immutable custody history without storing an
+        # unbounded access array in contract state.
+        event_reader = cast(Any, self.contract.events.EvidenceAccessRecorded())
+        logs = event_reader.get_logs(
+            argument_filters={"evidenceRef": evidence},
+            fromBlock=from_block,
+            toBlock=to_block,
+        )
+        events = [self._evidence_access_event(log) for log in logs]
+        return sorted(
+            events,
+            key=lambda event: (
+                event.block_number,
+                event.transaction_index,
+                event.log_index,
+            ),
+        )
+
+    def get_access_event_by_session(
+        self,
+        access_session_ref: str,
+        from_block: int = 0,
+        to_block: int | Literal["latest"] = "latest",
+    ) -> EvidenceAccessEvent | None:
+        """Return the unique access log identified by accessSessionRef."""
+
+        self.validate_connection()
+        session = normalize_bytes32(access_session_ref, "access_session_ref")
+        event_reader = cast(Any, self.contract.events.EvidenceAccessRecorded())
+        logs = list(
+            event_reader.get_logs(
+                argument_filters={"accessSessionRef": session},
+                fromBlock=from_block,
+                toBlock=to_block,
+            )
+        )
+        if not logs:
+            return None
+        if len(logs) != 1:
+            raise EventValidationError(
+                "expected at most one EvidenceAccessRecorded event for access_session_ref"
+            )
+        return self._evidence_access_event(logs[0])
+
     def evidence_exists(self, evidence_ref: str) -> bool:
         """Return whether an evidence reference exists."""
 
@@ -168,6 +269,46 @@ class BlockchainClient:
         self.validate_connection()
         session = normalize_bytes32(access_session_ref, "access_session_ref")
         return bool(self.contract.functions.accessSessionExists(session).call())
+
+    def _evidence_recorded_event(self, event: Any) -> EvidenceRecordedEvent:
+        self._validate_event_contract(event)
+        args = event["args"]
+        return EvidenceRecordedEvent(
+            evidence_ref=bytes32_to_hex(args["evidenceRef"]),
+            evidence_hash=bytes32_to_hex(args["evidenceHash"]),
+            uploader_ref=bytes32_to_hex(args["uploaderRef"]),
+            recorded_at=int(args["recordedAt"]),
+            writer=str(args["writer"]).lower(),
+            tx_hash=self._event_tx_hash(event),
+            block_number=int(event["blockNumber"]),
+            transaction_index=int(event["transactionIndex"]),
+            log_index=int(event["logIndex"]),
+        )
+
+    def _evidence_access_event(self, event: Any) -> EvidenceAccessEvent:
+        self._validate_event_contract(event)
+        args = event["args"]
+        return EvidenceAccessEvent(
+            evidence_ref=bytes32_to_hex(args["evidenceRef"]),
+            officer_ref=bytes32_to_hex(args["officerRef"]),
+            access_session_ref=bytes32_to_hex(args["accessSessionRef"]),
+            recorded_at=int(args["recordedAt"]),
+            writer=str(args["writer"]).lower(),
+            tx_hash=self._event_tx_hash(event),
+            block_number=int(event["blockNumber"]),
+            transaction_index=int(event["transactionIndex"]),
+            log_index=int(event["logIndex"]),
+        )
+
+    def _validate_event_contract(self, event: Any) -> None:
+        if str(event["address"]).lower() != self.contract.address.lower():
+            raise EventValidationError("event contract address mismatch")
+
+    @staticmethod
+    def _event_tx_hash(event: Any) -> str:
+        value = event["transactionHash"]
+        candidate = value.hex() if hasattr(value, "hex") else str(value)
+        return normalize_tx_hash(candidate)
 
     def _send_contract_transaction(
         self,
@@ -301,7 +442,7 @@ class BlockchainClient:
         args = dict(event["args"])
         for key, expected_value in expected_args.items():
             actual_value = args[key]
-            if key.endswith("Ref") or key == "staticHash":
+            if key.endswith("Ref") or key == "evidenceHash":
                 if bytes32_to_hex(actual_value) != bytes32_to_hex(expected_value):
                     raise EventValidationError(f"event argument mismatch: {key}")
             elif key == "writer":
@@ -310,7 +451,13 @@ class BlockchainClient:
             elif actual_value != expected_value:
                 raise EventValidationError(f"event argument mismatch: {key}")
         canonical_args = dict(args)
-        for key in ("evidenceRef", "staticHash", "officerRef", "accessSessionRef"):
+        for key in (
+            "evidenceRef",
+            "evidenceHash",
+            "uploaderRef",
+            "officerRef",
+            "accessSessionRef",
+        ):
             if key in canonical_args:
                 canonical_args[key] = bytes32_to_hex(canonical_args[key])
         return canonical_args

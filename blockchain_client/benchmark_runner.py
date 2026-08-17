@@ -23,7 +23,8 @@ class BenchmarkClient(Protocol):
     def record_evidence(
         self,
         evidence_ref: str,
-        static_hash: str,
+        evidence_hash: str,
+        uploader_ref: str,
     ) -> TransactionResult:
         """Record one synthetic evidence transaction."""
 
@@ -218,12 +219,17 @@ class BenchmarkRunner:
                 sequence=sequence,
                 label="access-evidence",
             )
-            static_hash = synthetic_bytes32(
+            evidence_hash = synthetic_bytes32(
                 run_id=run_id,
                 sequence=sequence,
-                label="access-static-hash",
+                label="access-evidence-hash",
             )
-            self.client.record_evidence(evidence_ref, static_hash)
+            uploader_ref = synthetic_bytes32(
+                run_id=run_id,
+                sequence=sequence,
+                label="access-uploader",
+            )
+            self.client.record_evidence(evidence_ref, evidence_hash, uploader_ref)
             prepared[sequence] = evidence_ref
         return prepared
 
@@ -238,12 +244,17 @@ class BenchmarkRunner:
             sequence=sequence,
             label="evidence",
         )
-        static_hash = synthetic_bytes32(
+        evidence_hash = synthetic_bytes32(
             run_id=run_id,
             sequence=sequence,
-            label="static-hash",
+            label="evidence-hash",
         )
-        return self.client.record_evidence(evidence_ref, static_hash)
+        uploader_ref = synthetic_bytes32(
+            run_id=run_id,
+            sequence=sequence,
+            label="uploader",
+        )
+        return self.client.record_evidence(evidence_ref, evidence_hash, uploader_ref)
 
     def _record_access(
         self,

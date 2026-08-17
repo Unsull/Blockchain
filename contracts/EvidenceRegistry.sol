@@ -18,21 +18,27 @@ contract EvidenceRegistry is IEvidenceRegistry, AccessControl, Pausable {
         _grantRole(PAUSER_ROLE, admin);
     }
 
-    function recordEvidence(bytes32 evidenceRef, bytes32 staticHash)
+    function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef)
         external
         onlyRole(WRITER_ROLE)
         whenNotPaused
     {
         if (evidenceRef == bytes32(0)) revert InvalidEvidenceRef();
-        if (staticHash == bytes32(0)) revert InvalidStaticHash();
+        if (evidenceHash == bytes32(0)) revert InvalidEvidenceHash();
+        // Blockchain integration: bind the evidence anchor to its custody uploader.
+        if (uploaderRef == bytes32(0)) revert InvalidUploaderRef();
         if (evidenceRecords[evidenceRef].exists) revert EvidenceAlreadyExists(evidenceRef);
 
         uint64 recordedAt = _currentTimestamp();
         evidenceRecords[evidenceRef] = EvidenceRecord({
-            staticHash: staticHash, recordedAt: recordedAt, writer: msg.sender, exists: true
+            evidenceHash: evidenceHash,
+            uploaderRef: uploaderRef,
+            recordedAt: recordedAt,
+            writer: msg.sender,
+            exists: true
         });
 
-        emit EvidenceRecorded(evidenceRef, staticHash, recordedAt, msg.sender);
+        emit EvidenceRecorded(evidenceRef, evidenceHash, uploaderRef, recordedAt, msg.sender);
     }
 
     function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef)
@@ -64,11 +70,23 @@ contract EvidenceRegistry is IEvidenceRegistry, AccessControl, Pausable {
     function getEvidence(bytes32 evidenceRef)
         external
         view
-        returns (bytes32 staticHash, uint64 recordedAt, address writer, bool exists)
+        returns (
+            bytes32 evidenceHash,
+            bytes32 uploaderRef,
+            uint64 recordedAt,
+            address writer,
+            bool exists
+        )
     {
         EvidenceRecord memory record = evidenceRecords[evidenceRef];
-        if (!record.exists) revert EvidenceNotFound(evidenceRef);
-        return (record.staticHash, record.recordedAt, record.writer, record.exists);
+
+        if (!record.exists) {
+            revert EvidenceNotFound(evidenceRef);
+        }
+
+        return (
+            record.evidenceHash, record.uploaderRef, record.recordedAt, record.writer, record.exists
+        );
     }
 
     function getAccessBySession(bytes32 accessSessionRef)

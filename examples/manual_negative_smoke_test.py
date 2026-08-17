@@ -1,24 +1,30 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import shutil
 import subprocess
 from collections.abc import Callable
+from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
-from blockchain_client import BlockchainClient, BlockchainClientSettings
+from blockchain_client import (
+    BlockchainClient,
+    BlockchainClientSettings,
+    derive_access_session_ref,
+    derive_actor_ref,
+    derive_evidence_ref,
+)
 from blockchain_client.exceptions import TransactionSubmissionError
 
 DEFAULT_RPC_URL = "http://127.0.0.1:8545"
 DEFAULT_CHAIN_ID = 31337
 
 
-def to_bytes32(value: str) -> str:
-    """Create a deterministic non-zero bytes32 reference."""
+def sample_evidence_hash(value: bytes) -> str:
+    """Hash deterministic local sample evidence bytes."""
 
-    return "0x" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return "0x" + sha256(value).hexdigest()
 
 
 def make_client(private_key: str) -> BlockchainClient:
@@ -79,20 +85,24 @@ def main() -> None:
 
     writer = make_client(writer_key)
     unauthorized = make_client(unauthorized_key)
-    run_id = uuid4().hex
+    evidence_id = uuid4()
+    evidence_ref = derive_evidence_ref(evidence_id)
+    evidence_hash = sample_evidence_hash(b"negative:initial:" + evidence_id.bytes)
+    duplicate_evidence_hash = sample_evidence_hash(b"negative:duplicate:" + evidence_id.bytes)
+    uploader_ref = derive_actor_ref(uuid4())
+    officer_ref = derive_actor_ref(uuid4())
+    access_session_ref = derive_access_session_ref(uuid4())
 
-    evidence_ref = to_bytes32(f"negative:evidence:{run_id}")
-    static_hash = to_bytes32(f"negative:static:{run_id}")
-    duplicate_static_hash = to_bytes32(f"negative:static-duplicate:{run_id}")
-    officer_ref = to_bytes32("negative:officer:local-test-001")
-    access_session_ref = to_bytes32(f"negative:access-session:{run_id}")
-
-    writer.record_evidence(evidence_ref, static_hash)
+    writer.record_evidence(evidence_ref, evidence_hash, uploader_ref)
     print("[SETUP] recorded initial evidence")
 
     expect_submission_failure(
         "duplicate evidence_ref",
-        lambda: writer.record_evidence(evidence_ref, duplicate_static_hash),
+        lambda: writer.record_evidence(
+            evidence_ref,
+            duplicate_evidence_hash,
+            uploader_ref,
+        ),
     )
 
     writer.record_access(evidence_ref, officer_ref, access_session_ref)
@@ -102,7 +112,7 @@ def main() -> None:
         "duplicate access_session_ref",
         lambda: writer.record_access(
             evidence_ref,
-            to_bytes32("negative:officer:duplicate-attempt"),
+            derive_actor_ref(uuid4()),
             access_session_ref,
         ),
     )
@@ -110,8 +120,9 @@ def main() -> None:
     expect_submission_failure(
         "unauthorized writer",
         lambda: unauthorized.record_evidence(
-            to_bytes32(f"negative:unauthorized:evidence:{run_id}"),
-            to_bytes32(f"negative:unauthorized:static:{run_id}"),
+            derive_evidence_ref(uuid4()),
+            sample_evidence_hash(b"negative:unauthorized"),
+            derive_actor_ref(uuid4()),
         ),
     )
 
@@ -125,8 +136,9 @@ def main() -> None:
         expect_submission_failure(
             "paused record_evidence",
             lambda: writer.record_evidence(
-                to_bytes32(f"negative:paused:evidence:{run_id}"),
-                to_bytes32(f"negative:paused:static:{run_id}"),
+                derive_evidence_ref(uuid4()),
+                sample_evidence_hash(b"negative:paused"),
+                derive_actor_ref(uuid4()),
             ),
         )
 
@@ -134,8 +146,8 @@ def main() -> None:
             "paused record_access",
             lambda: writer.record_access(
                 evidence_ref,
-                to_bytes32("negative:officer:paused-attempt"),
-                to_bytes32(f"negative:paused:access-session:{run_id}"),
+                derive_actor_ref(uuid4()),
+                derive_access_session_ref(uuid4()),
             ),
         )
     finally:
