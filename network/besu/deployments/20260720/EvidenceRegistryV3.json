@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T07:04:53.194170+00:00",
+  "deployment_timestamp": "2026-08-31T06:38:14+00:00",
+  "network": "besu-qbft",
+  "rpc_url": "http://127.0.0.1:8545",
+  "chain_id": 20260720,
+  "contract_name": "EvidenceRegistryV3",
+  "contract_version": "V3",
+  "contract_address": "0x53584361c3F7A1Baf6DBe5C975EF3419274B51E4",
+  "deployment_transaction": "0x1cab0a0d06b700c471649421ecdc5b39730d97efa38ed5d74282b1559018c3a8",
+  "deployment_block": 18079,
+  "deployer_address": "0xAd457E6d521d6B0C02b9f9794377cA6969cC975f",
+  "admin_address": "0xf1b9E28dEb9Bfbe8FA18c4470aE43Be719228E98",
+  "writer_address": "0x7A3A4583f173aF57aa6f659C1dA36a804175Ae3C",
+  "writer_role_grant_transaction": "0xb91d11a61bf5147ee00463a73806a565f489323b599938174ac5501a030cded3",
+  "writer_role_grant_block": 18095,
+  "source_commit": "8ce41ecef2833582246b7d81eb4dfce2fbcf35da",
+  "source_branch": "feature/evidence-registry-v3",
+  "artifact_path": "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
+  "abi_fixture_path": "tests/fixtures/EvidenceRegistryV3.json",
+  "creation_bytecode_keccak": "0x640c39df30790b363c3d9d77a8e36386076f24a7bffc0aa5fcb17a645714e372",
+  "runtime_bytecode_keccak": "0xac6ee317a4af42126f4ec383c876d9e4535c741f26b53ab9b58cc5ae2e631730",
+  "smoke_transactions": {
+    "record_evidence": "0xa021522b4c745031cf09f75c9e180d7b9cea5e957d3d575a937e1526b70fd2a9",
+    "view": "0x34f2a6393f670ec856c56f95e1e39ecf53c17f65874b1361c25cb4ff032bb861",
+    "download": "0xb90063e5160c6b3d8e819f5201dd32bd642a50cdc976f6b4512f4993cd240b2b"
+  }
+}

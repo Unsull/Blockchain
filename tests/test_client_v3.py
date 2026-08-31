@@ -1,16 +1,36 @@
+from pathlib import Path
 from types import MethodType, SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from hexbytes import HexBytes
 
-from blockchain_client import AccessAction, BlockchainClient
+from blockchain_client import AccessAction, BlockchainClient, BlockchainClientSettings
+from blockchain_client.client import geth_poa_middleware
 
 EVIDENCE_REF = "0x" + "11" * 32
 OFFICER_REF = "0x" + "22" * 32
 SESSION_REF = "0x" + "33" * 32
 WRITER = "0x" + "44" * 20
 OCCURRED_AT = 1_700_000_000
+
+
+def test_proof_of_authority_settings_install_poa_middleware() -> None:
+    web3 = MagicMock()
+    settings = BlockchainClientSettings(
+        provider_uri="http://127.0.0.1:8545",
+        chain_id=20_260_720,
+        contract_address="0x" + "55" * 20,
+        artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+        proof_of_authority=True,
+    )
+
+    BlockchainClient(settings, web3=web3)
+
+    web3.middleware_onion.inject.assert_called_once_with(
+        geth_poa_middleware,
+        layer=0,
+    )
 
 
 def writable_client() -> tuple[BlockchainClient, MagicMock]:
