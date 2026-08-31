@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import os
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -15,6 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from blockchain_client import (  # noqa: E402
+    AccessAction,
     BlockchainClient,
     BlockchainClientSettings,
     TransactionProofBuilder,
@@ -42,7 +44,9 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--artifact-path",
         type=Path,
-        default=Path(os.getenv("ARTIFACT_PATH", "out/EvidenceRegistry.sol/EvidenceRegistry.json")),
+        default=Path(
+            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json")
+        ),
     )
     parser.add_argument(
         "--confirmations", type=int, default=_optional_int("MIN_CONFIRMATIONS", default=1)
@@ -124,6 +128,8 @@ def execute(args: argparse.Namespace) -> TransactionProof:
             args.evidence_ref,
             synthetic_bytes32("officer"),
             synthetic_bytes32("access-session"),
+            AccessAction.DOWNLOAD,
+            int(datetime.now(tz=UTC).timestamp()),
         )
         return builder.build_access_proof(result.tx_hash)
     raise ValueError(f"unsupported command: {args.command}")

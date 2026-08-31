@@ -3,6 +3,7 @@
 from blockchain_client.client import BlockchainClient
 from blockchain_client.config import BlockchainClientSettings
 from blockchain_client.models import (
+    AccessAction,
     BlockchainHealth,
     EvidenceAccessEvent,
     EvidenceRecordedEvent,
@@ -20,6 +21,7 @@ from blockchain_client.reference_derivation import (
 from blockchain_client.signer import LocalPrivateKeySigner, TransactionSigner
 
 __all__ = [
+    "AccessAction",
     "BlockchainClient",
     "BlockchainClientSettings",
     "BlockchainHealth",

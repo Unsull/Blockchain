@@ -2,7 +2,15 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import IntEnum
 from typing import Any
+
+
+class AccessAction(IntEnum):
+    """Actions persisted by EvidenceRegistry V3."""
+
+    VIEW = 0
+    DOWNLOAD = 1
 
 
 @dataclass(frozen=True)
@@ -51,6 +59,8 @@ class EvidenceAccessEvent:
     evidence_ref: str
     officer_ref: str
     access_session_ref: str
+    action: AccessAction
+    occurred_at: int
     recorded_at: int
     writer: str
     tx_hash: str
@@ -81,6 +91,9 @@ class VerifiedAccess:
     evidence_ref: str
     officer_ref: str
     access_session_ref: str
+    action: AccessAction
+    occurred_at: int
+    recorded_at: int
     tx_hash: str
     block_number: int
     block_timestamp: datetime

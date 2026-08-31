@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from web3 import Web3
 
+from blockchain_client.models import AccessAction
 from blockchain_client.references import bytes32_to_hex, normalize_tx_hash
 
 SCHEMA_VERSION = "1.0"
@@ -167,6 +168,8 @@ class AccessTransactionProof:
     evidence_ref: str
     officer_ref: str
     access_session_ref: str
+    action: AccessAction
+    occurred_at: int
     writer_address: str
     checks: VerificationChecks
 
@@ -177,6 +180,10 @@ class AccessTransactionProof:
         object.__setattr__(self, "evidence_ref", bytes32_to_hex(self.evidence_ref))
         object.__setattr__(self, "officer_ref", bytes32_to_hex(self.officer_ref))
         object.__setattr__(self, "access_session_ref", bytes32_to_hex(self.access_session_ref))
+        if not isinstance(self.action, AccessAction):
+            raise ValueError("action must be an AccessAction")
+        if self.occurred_at <= 0:
+            raise ValueError("occurred_at must be positive")
         object.__setattr__(
             self, "writer_address", _canonical_address(self.writer_address, "writer_address")
         )
@@ -194,6 +201,8 @@ class AccessTransactionProof:
                 "evidence_ref": self.evidence_ref,
                 "officer_ref": self.officer_ref,
                 "access_session_ref": self.access_session_ref,
+                "action": self.action.name,
+                "occurred_at": self.occurred_at,
             },
             "writer_address": self.writer_address,
             "checks": self.checks.to_dict(),

@@ -17,7 +17,7 @@ def main() -> None:
 
     artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
     exported = {
-        "contractName": artifact.get("contractName", "EvidenceRegistry"),
+        "contractName": artifact.get("contractName", args.artifact.stem),
         "abi": artifact["abi"],
         "bytecode": artifact.get("bytecode", {}),
         "deployedBytecode": artifact.get("deployedBytecode", {}),

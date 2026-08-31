@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
 from blockchain_client import (
+    AccessAction,
     BlockchainClient,
     BlockchainClientSettings,
     derive_access_session_ref,
@@ -29,7 +31,7 @@ def main() -> None:
     contract_address = os.environ["CONTRACT_ADDRESS"]
     writer_key = os.environ["WRITER_PRIVATE_KEY"]
     artifact_path = Path(
-        os.getenv("ARTIFACT_PATH", "out/EvidenceRegistry.sol/EvidenceRegistry.json")
+        os.getenv("ARTIFACT_PATH", "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json")
     )
 
     settings = BlockchainClientSettings(
@@ -70,10 +72,19 @@ def main() -> None:
     assert evidence_event.uploader_ref == uploader_ref
     assert evidence_event.tx_hash == evidence_result.tx_hash
 
-    access_result = client.record_access(evidence_ref, officer_ref, access_session_ref)
+    occurred_at = int(datetime.now(tz=UTC).timestamp())
+    access_result = client.record_access(
+        evidence_ref,
+        officer_ref,
+        access_session_ref,
+        AccessAction.DOWNLOAD,
+        occurred_at,
+    )
     access = client.get_access_by_session(access_session_ref)
     assert access["evidence_ref"] == evidence_ref
     assert access["officer_ref"] == officer_ref
+    assert access["action"] == AccessAction.DOWNLOAD
+    assert access["occurred_at"] == occurred_at
     access_events = client.list_access_events(
         evidence_ref,
         from_block=access_result.block_number,

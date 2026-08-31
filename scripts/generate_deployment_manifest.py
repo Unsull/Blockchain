@@ -21,6 +21,7 @@ def main() -> None:
     parser.add_argument("--contract-address", required=True)
     parser.add_argument("--deployer-address", required=True)
     parser.add_argument("--admin-address", required=True)
+    parser.add_argument("--contract-name", default="EvidenceRegistry")
     parser.add_argument(
         "--artifact",
         default="out/EvidenceRegistry.sol/EvidenceRegistry.json",
@@ -34,7 +35,7 @@ def main() -> None:
         "network": args.network,
         "rpc_url": args.rpc_url,
         "chain_id": args.chain_id,
-        "contract_name": "EvidenceRegistry",
+        "contract_name": args.contract_name,
         "contract_address": args.contract_address,
         "deployer_address": args.deployer_address,
         "admin_address": args.admin_address,

@@ -9,7 +9,8 @@ mapping, and application database logic are intentionally out of scope.
 
 The module provides:
 
-- `EvidenceRegistry` smart contract for immutable evidence and access records.
+- Versioned `EvidenceRegistry` V2 and `EvidenceRegistryV3` contracts for immutable
+  evidence and access records.
 - Foundry deployment and role-management scripts.
 - Python `blockchain_client` package for signed raw transactions, event decoding,
   state queries, and historical transaction verification.
@@ -27,7 +28,7 @@ proxy keys, AES payloads, authentication, or image storage.
 Backend systems derive opaque `bytes32` references and send them to this module:
 
 - `evidence_ref`: backend-owned evidence identifier hash.
-- `static_hash`: static evidence/watermark hash.
+- `evidence_hash`: SHA-256 anchor for the original evidence bytes.
 - `officer_ref`: backend-owned officer reference hash, not a real identity.
 - `access_session_ref`: backend-owned unique access session reference.
 
@@ -69,13 +70,22 @@ target environment.
 
 ## Contract API
 
-`contracts/EvidenceRegistry.sol` exposes:
+`contracts/EvidenceRegistryV3.sol` is the canonical next deployment target.
+`contracts/EvidenceRegistry.sol` remains available for historical V2 deployments.
 
 ```solidity
-function recordEvidence(bytes32 evidenceRef, bytes32 staticHash) external;
-function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef) external;
-function getEvidence(bytes32 evidenceRef) external view returns (bytes32, uint64, address, bool);
-function getAccessBySession(bytes32 accessSessionRef) external view returns (bytes32, bytes32, uint64, address);
+function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef) external;
+function recordAccess(
+    bytes32 evidenceRef,
+    bytes32 officerRef,
+    bytes32 accessSessionRef,
+    AccessAction action,
+    uint64 occurredAt
+) external;
+function getEvidence(bytes32 evidenceRef)
+    external view returns (bytes32, bytes32, uint64, address, bool);
+function getAccessBySession(bytes32 accessSessionRef)
+    external view returns (bytes32, bytes32, AccessAction, uint64, uint64, address);
 function evidenceExists(bytes32 evidenceRef) external view returns (bool);
 function accessSessionExists(bytes32 accessSessionRef) external view returns (bool);
 function pause() external;
@@ -95,11 +105,17 @@ constructor requires a non-zero admin address and does not silently make
 ## Events
 
 ```solidity
-event EvidenceRecorded(bytes32 indexed evidenceRef, bytes32 staticHash, uint64 recordedAt, address indexed writer);
-event EvidenceAccessRecorded(bytes32 indexed evidenceRef, bytes32 indexed officerRef, bytes32 indexed accessSessionRef, uint64 recordedAt, address writer);
+event EvidenceRecorded(bytes32 indexed evidenceRef, bytes32 evidenceHash, bytes32 indexed uploaderRef, uint64 recordedAt, address indexed writer);
+event EvidenceAccessRecorded(bytes32 indexed evidenceRef, bytes32 indexed officerRef, bytes32 indexed accessSessionRef, AccessAction action, uint64 occurredAt, uint64 recordedAt, address writer);
 ```
 
 OpenZeppelin `Pausable` emits standard `Paused` and `Unpaused` events.
+
+V3 stores two access timestamps: `occurredAt` is the non-zero Unix-second
+application event time supplied by the backend, while `recordedAt` is the
+contract-controlled `block.timestamp`. V3 intentionally does not reject old
+or future `occurredAt` values beyond the non-zero uint64 requirement so that
+delayed reconciliation remains possible.
 
 ## Compile
 
@@ -132,7 +148,7 @@ pytest -m "not integration" -vv
 $env:REGISTRY_ADMIN_ADDRESS="0x..."
 $env:DEPLOYER_PRIVATE_KEY="0x..."
 $env:CHAIN_ID="31337"
-forge script script/DeployEvidenceRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
+forge script script/DeployEvidenceRegistryV3.s.sol:DeployEvidenceRegistryV3 --rpc-url $env:RPC_URL --broadcast
 ```
 
 Deployment scripts fail fast when `CHAIN_ID` does not match, the target contract
@@ -164,20 +180,31 @@ forge script script/UnpauseRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
 
 ```python
 from pathlib import Path
-from blockchain_client import BlockchainClient, BlockchainClientSettings, LocalPrivateKeySigner
+from blockchain_client import (
+    AccessAction,
+    BlockchainClient,
+    BlockchainClientSettings,
+    LocalPrivateKeySigner,
+)
 
 settings = BlockchainClientSettings(
     provider_uri="http://127.0.0.1:8545",
     chain_id=31337,
     contract_address="0x...",
-    artifact_path=Path("out/EvidenceRegistry.sol/EvidenceRegistry.json"),
+    artifact_path=Path("out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json"),
     confirmation_blocks=2,
 )
 
 signer = LocalPrivateKeySigner("0x...")
 client = BlockchainClient(settings, signer=signer)
-result = client.record_evidence(evidence_ref, static_hash)
-access = client.record_access(evidence_ref, officer_ref, access_session_ref)
+result = client.record_evidence(evidence_ref, evidence_hash, uploader_ref)
+access = client.record_access(
+    evidence_ref,
+    officer_ref,
+    access_session_ref,
+    AccessAction.DOWNLOAD,
+    occurred_at_unix_seconds,
+)
 ```
 
 `signer_private_key` remains as a temporary backward-compatible setting, but new
@@ -223,7 +250,7 @@ unauthorized writer rejection, and paused contract rejection.
 Generate and verify manifests after deploy:
 
 ```powershell
-python scripts/generate_deployment_manifest.py --network anvil --rpc-url $env:RPC_URL --chain-id 31337 --contract-address $env:CONTRACT_ADDRESS --deployer-address 0x... --admin-address $env:REGISTRY_ADMIN_ADDRESS --output deployments/anvil/EvidenceRegistry.manifest.json
+python scripts/generate_deployment_manifest.py --network anvil --rpc-url $env:RPC_URL --chain-id 31337 --contract-name EvidenceRegistryV3 --contract-address $env:CONTRACT_ADDRESS --deployer-address 0x... --admin-address $env:REGISTRY_ADMIN_ADDRESS --artifact out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json --output deployments/anvil/EvidenceRegistryV3.manifest.json
 python scripts/verify_deployment.py --manifest deployments/anvil/EvidenceRegistry.manifest.json
 python scripts/export_artifact.py --output deployments/anvil/EvidenceRegistry.artifact.json
 ```
@@ -244,8 +271,8 @@ Python transaction submissions return:
 
 Backend calls:
 
-- `recordEvidence(evidence_ref: bytes32, static_hash: bytes32)`
-- `recordAccess(evidence_ref: bytes32, officer_ref: bytes32, access_session_ref: bytes32)`
+- `recordEvidence(evidence_ref, evidence_hash, uploader_ref)`
+- `recordAccess(evidence_ref, officer_ref, access_session_ref, action, occurredAt)`
 
 Backend remains responsible for authentication, user authorization,
 real-identity mapping, evidence identity mapping, access session generation,
@@ -276,7 +303,7 @@ forge build
 The Python client expects this artifact by default:
 
 ```text
-out/EvidenceRegistry.sol/EvidenceRegistry.json
+out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json
 ```
 
 ### `no deployed bytecode at contract address`

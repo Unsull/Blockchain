@@ -26,6 +26,7 @@ from blockchain_client.exceptions import (
     TransactionTimeoutError,
 )
 from blockchain_client.models import (
+    AccessAction,
     BlockchainHealth,
     EvidenceAccessEvent,
     EvidenceRecordedEvent,
@@ -125,14 +126,28 @@ class BlockchainClient:
         evidence_ref: str,
         officer_ref: str,
         access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
     ) -> TransactionResult:
-        """Record an access session using opaque bytes32 references."""
+        """Record a V3 access session and its application event time."""
 
         signer, _ = self._require_signer()
+        if not isinstance(action, AccessAction):
+            raise ValueError("action must be AccessAction.VIEW or AccessAction.DOWNLOAD")
+        if isinstance(occurred_at, bool) or not isinstance(occurred_at, int):
+            raise ValueError("occurred_at must be integer Unix seconds")
+        if occurred_at <= 0 or occurred_at > 2**64 - 1:
+            raise ValueError("occurred_at must fit a non-zero uint64")
         evidence = normalize_bytes32(evidence_ref, "evidence_ref")
         officer = normalize_bytes32(officer_ref, "officer_ref")
         session = normalize_bytes32(access_session_ref, "access_session_ref")
-        function = self.contract.functions.recordAccess(evidence, officer, session)
+        function = self.contract.functions.recordAccess(
+            evidence,
+            officer,
+            session,
+            action.value,
+            occurred_at,
+        )
         return self._send_contract_transaction(
             function,
             "EvidenceAccessRecorded",
@@ -140,6 +155,8 @@ class BlockchainClient:
                 "evidenceRef": evidence,
                 "officerRef": officer,
                 "accessSessionRef": session,
+                "action": action.value,
+                "occurredAt": occurred_at,
                 "writer": signer.address,
             },
         )
@@ -165,12 +182,14 @@ class BlockchainClient:
 
         self.validate_connection()
         session = normalize_bytes32(access_session_ref, "access_session_ref")
-        evidence_ref, officer_ref, recorded_at, writer = (
+        evidence_ref, officer_ref, action, occurred_at, recorded_at, writer = (
             self.contract.functions.getAccessBySession(session).call()
         )
         return {
             "evidence_ref": bytes32_to_hex(evidence_ref),
             "officer_ref": bytes32_to_hex(officer_ref),
+            "action": AccessAction(int(action)),
+            "occurred_at": int(occurred_at),
             "recorded_at": recorded_at,
             "writer": writer,
         }
@@ -288,10 +307,16 @@ class BlockchainClient:
     def _evidence_access_event(self, event: Any) -> EvidenceAccessEvent:
         self._validate_event_contract(event)
         args = event["args"]
+        try:
+            action = AccessAction(int(args["action"]))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise EventValidationError("invalid access action in event") from exc
         return EvidenceAccessEvent(
             evidence_ref=bytes32_to_hex(args["evidenceRef"]),
             officer_ref=bytes32_to_hex(args["officerRef"]),
             access_session_ref=bytes32_to_hex(args["accessSessionRef"]),
+            action=action,
+            occurred_at=int(args["occurredAt"]),
             recorded_at=int(args["recordedAt"]),
             writer=str(args["writer"]).lower(),
             tx_hash=self._event_tx_hash(event),

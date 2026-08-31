@@ -11,6 +11,7 @@ from web3.exceptions import TransactionNotFound
 
 from blockchain_client.config import BlockchainClientSettings
 from blockchain_client.exceptions import TransactionVerificationError
+from blockchain_client.models import AccessAction
 from blockchain_client.transaction_verifier import TransactionVerifier
 
 TX_HASH = "0x" + "ab" * 32
@@ -64,11 +65,16 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
             "evidenceRef": HexBytes(EVIDENCE_REF),
             "officerRef": HexBytes(OFFICER_REF),
             "accessSessionRef": HexBytes(SESSION_REF),
+            "action": AccessAction.VIEW.value,
+            "occurredAt": 1_700_000_000,
         }
         args = {
             "evidenceRef": HexBytes(EVIDENCE_REF),
             "officerRef": HexBytes(OFFICER_REF),
             "accessSessionRef": HexBytes(SESSION_REF),
+            "action": AccessAction.VIEW.value,
+            "occurredAt": 1_700_000_000,
+            "recordedAt": 1_700_000_030,
             "writer": WRITER,
         }
         event_name = "EvidenceAccessRecorded"
@@ -85,7 +91,14 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
             "writer": WRITER,
             "exists": True,
         },
-        "access": {"evidence_ref": EVIDENCE_REF, "officer_ref": OFFICER_REF, "writer": WRITER},
+        "access": {
+            "evidence_ref": EVIDENCE_REF,
+            "officer_ref": OFFICER_REF,
+            "action": AccessAction.VIEW,
+            "occurred_at": 1_700_000_000,
+            "recorded_at": 1_700_000_030,
+            "writer": WRITER,
+        },
     }
     data: dict[str, Any] = {
         "tx": tx,
@@ -110,7 +123,7 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
             provider_uri="http://127.0.0.1:8545",
             chain_id=20260720,
             contract_address=CONTRACT,
-            artifact_path=Path("tests/fixtures/EvidenceRegistry.json"),
+            artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
             confirmation_blocks=1,
         ),
         web3=SimpleNamespace(eth=eth),
@@ -142,6 +155,9 @@ def test_successful_access_verification() -> None:
     result = verifier.verify_access_transaction(TX_HASH)
     assert result.officer_ref == OFFICER_REF
     assert result.access_session_ref == SESSION_REF
+    assert result.action == AccessAction.VIEW
+    assert result.occurred_at == 1_700_000_000
+    assert result.recorded_at == 1_700_000_030
 
 
 def test_transaction_not_found() -> None:
