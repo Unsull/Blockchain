@@ -25,6 +25,7 @@ actual_chain_id="$(cast chain-id --rpc-url "$RPC_URL")"
   exit 1
 }
 
+forge clean
 forge build
 forge script script/DeployEvidenceRegistryV3.s.sol:DeployEvidenceRegistryV3 \
   --rpc-url "$RPC_URL" \
@@ -63,11 +64,10 @@ print(tx["hash"], int(receipt["blockNumber"], 16))
 PY
 )"
 read -r writer_grant_transaction writer_grant_block <<< "$grant_metadata"
-if [[ -n "${PAUSER_ADDRESS:-}" ]]; then
+if [[ -n "${PAUSER_ADDRESS:-}" && "${PAUSER_ADDRESS,,}" != "${REGISTRY_ADMIN_ADDRESS,,}" ]]; then
   forge script script/GrantPauserRole.s.sol:GrantPauserRole --rpc-url "$RPC_URL" --broadcast -vvvv
 fi
 
-mkdir -p "$OUT_DIR"
 python scripts/generate_deployment_manifest.py \
   --network "besu-qbft" \
   --rpc-url "$RPC_URL" \
