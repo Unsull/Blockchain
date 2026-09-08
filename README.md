@@ -9,7 +9,7 @@ mapping, and application database logic are intentionally out of scope.
 
 The module provides:
 
-- Versioned `EvidenceRegistry` V2 and `EvidenceRegistryV3` contracts for immutable
+- `EvidenceRegistryV3` contract for immutable
   evidence and access records.
 - Foundry deployment and role-management scripts.
 - Python `blockchain_client` package for signed raw transactions, event decoding,
@@ -70,8 +70,7 @@ target environment.
 
 ## Contract API
 
-`contracts/EvidenceRegistryV3.sol` is the canonical next deployment target.
-`contracts/EvidenceRegistry.sol` remains available for historical V2 deployments.
+`contracts/EvidenceRegistryV3.sol` is the only active deployment target.
 
 ```solidity
 function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef) external;
@@ -251,8 +250,8 @@ Generate and verify manifests after deploy:
 
 ```powershell
 python scripts/generate_deployment_manifest.py --network anvil --rpc-url $env:RPC_URL --chain-id 31337 --contract-name EvidenceRegistryV3 --contract-address $env:CONTRACT_ADDRESS --deployer-address 0x... --admin-address $env:REGISTRY_ADMIN_ADDRESS --artifact out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json --output deployments/anvil/EvidenceRegistryV3.manifest.json
-python scripts/verify_deployment.py --manifest deployments/anvil/EvidenceRegistry.manifest.json
-python scripts/export_artifact.py --output deployments/anvil/EvidenceRegistry.artifact.json
+python scripts/verify_deployment.py --manifest deployments/anvil/EvidenceRegistryV3.manifest.json
+python scripts/export_artifact.py --output deployments/anvil/EvidenceRegistryV3.artifact.json
 ```
 
 ## Transaction Result Format

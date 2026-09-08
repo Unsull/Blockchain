@@ -21,11 +21,21 @@ def main() -> None:
     parser.add_argument("--contract-address", required=True)
     parser.add_argument("--deployer-address", required=True)
     parser.add_argument("--admin-address", required=True)
-    parser.add_argument("--contract-name", default="EvidenceRegistry")
+    parser.add_argument("--contract-name", default="EvidenceRegistryV3")
+    parser.add_argument("--contract-version", default="V3")
     parser.add_argument(
         "--artifact",
-        default="out/EvidenceRegistry.sol/EvidenceRegistry.json",
+        default="out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
     )
+    parser.add_argument(
+        "--abi-fixture",
+        default="tests/fixtures/EvidenceRegistryV3.json",
+    )
+    parser.add_argument("--deployment-transaction")
+    parser.add_argument("--deployment-block", type=int)
+    parser.add_argument("--writer-address")
+    parser.add_argument("--writer-role-grant-transaction")
+    parser.add_argument("--writer-role-grant-block", type=int)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -36,10 +46,17 @@ def main() -> None:
         "rpc_url": args.rpc_url,
         "chain_id": args.chain_id,
         "contract_name": args.contract_name,
+        "contract_version": args.contract_version,
         "contract_address": args.contract_address,
+        "deployment_transaction": args.deployment_transaction,
+        "deployment_block": args.deployment_block,
         "deployer_address": args.deployer_address,
         "admin_address": args.admin_address,
+        "writer_address": args.writer_address,
+        "writer_role_grant_transaction": args.writer_role_grant_transaction,
+        "writer_role_grant_block": args.writer_role_grant_block,
         "artifact_path": args.artifact,
+        "abi_fixture_path": args.abi_fixture,
         "git_commit": git_output("rev-parse", "HEAD"),
         "git_branch": git_output("branch", "--show-current"),
         "foundry": {

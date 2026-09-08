@@ -54,7 +54,7 @@ def main() -> None:
     # Runtime smoke uses the same canonical references that the Capstone backend
     # will use after repository integration.
     evidence_ref = derive_evidence_ref(evidence_id)
-    evidence_hash = "0x" + sha256(b"besu-v2-smoke:" + evidence_id.bytes).hexdigest()
+    evidence_hash = "0x" + sha256(b"besu-v3-smoke:" + evidence_id.bytes).hexdigest()
     uploader_ref = derive_actor_ref(uploader_id)
     officer_ref = derive_actor_ref(officer_id)
     access_session_ref = derive_access_session_ref(access_log_id)
