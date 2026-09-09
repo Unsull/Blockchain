@@ -1,236 +1,155 @@
-# Evidence Blockchain Module
+# โมดูล Blockchain — EvidenceRegistryV3
 
-This repository contains the private EVM blockchain module for a digital
-evidence platform. It records and verifies opaque evidence and access
-references only. Watermarking, image storage, authentication, officer identity
-mapping, and application database logic are intentionally out of scope.
+โมดูลบันทึกและตรวจสอบหลักฐานบน private EVM โดยใช้ `EvidenceRegistryV3` เท่านั้น
+ระบบปัจจุบันใช้ Hyperledger Besu `26.7.0`, QBFT **4 validators + 1 RPC**, Chain ID `20260720`
+พร้อม Prometheus และ Grafana โค้ด backend เป็นผู้จัดการตัวตน สิทธิ์ผู้ใช้ รูปภาพ watermark และฐานข้อมูล
+บน chain เก็บ opaque `bytes32`, เวลา และ address ผู้เขียน ไม่เก็บไฟล์หลักฐานหรือชื่อบุคคล
 
-## Scope
+## โครงสร้างและแหล่งข้อมูลหลัก
 
-The module provides:
+| Path | หน้าที่ |
+| --- | --- |
+| `contracts/EvidenceRegistryV3.sol`, `contracts/interfaces/IEvidenceRegistryV3.sol` | contract และ API ปัจจุบัน |
+| `blockchain_client/` | signer, nonce, ส่งธุรกรรม, อ่าน state/event, ตรวจธุรกรรมและสร้าง proof, benchmark |
+| `script/` | Foundry deploy, grant/revoke roles, pause/unpause |
+| `scripts/` | export artifact, สร้าง manifest, ตรวจ deployment |
+| `test/`, `tests/` | Solidity และ Python tests |
+| `network/besu/` | Compose, genesis, config nodes, monitoring และ operational scripts |
+| `network/besu/deployments/20260720/EvidenceRegistryV3.json` | manifest สาธารณะของ deployment ปัจจุบัน |
+| `lib/` | dependencies แบบ Git submodule; ไม่แก้เอกสาร upstream ให้เป็นเอกสารโครงการ |
 
-- `EvidenceRegistryV3` contract for immutable
-  evidence and access records.
-- Foundry deployment and role-management scripts.
-- Python `blockchain_client` package for signed raw transactions, event decoding,
-  state queries, and historical transaction verification.
-- Private network guidance and a Besu QBFT Docker Compose stack for integration
-  and staging.
+รายละเอียด: [เครือข่าย](network/besu/README.md), [การปฏิบัติงาน](network/besu/docs/operations.md),
+[monitoring](network/besu/docs/monitoring-dashboard.md), [backup/restore](network/besu/docs/backup-recovery.md),
+[benchmark](network/besu/benchmarks/README.md), [proof](network/besu/proofs/README.md),
+[การย้ายมา V3](MIGRATION.md), [ความปลอดภัย](SECURITY.md)
 
-## Out Of Scope
+## เริ่มระบบที่มีอยู่แล้ว
 
-This module does not implement frontend UI, FastAPI business endpoints,
-watermark embedding/extraction, PostgreSQL persistence, officer databases,
-proxy keys, AES payloads, authentication, or image storage.
+รันจาก root ของ blockchain; shell scripts ใช้ Bash (Git Bash/WSL/Linux)
+และ Python ต้องเป็น environment ของโมดูลนี้ ห้ามคัดลอก `.env.example` ทับ `.env` ที่มีอยู่
 
-## Architecture
-
-Backend systems derive opaque `bytes32` references and send them to this module:
-
-- `evidence_ref`: backend-owned evidence identifier hash.
-- `evidence_hash`: SHA-256 anchor for the original evidence bytes.
-- `officer_ref`: backend-owned officer reference hash, not a real identity.
-- `access_session_ref`: backend-owned unique access session reference.
-
-The contract stores `bytes32` values, block timestamps, and writer addresses.
-It never stores personally identifiable information or real case/file names.
-
-## Private Network Options
-
-Use Anvil for local unit and integration development. Use Besu QBFT for a
-private integration/staging EVM network.
-
-Besu QBFT stack:
-
-```text
-validator-1  validator-2  validator-3  validator-4
-     |            |            |            |
-     +------------+------------+------------+
-                  private QBFT P2P network
-                              |
-                           rpc-node
-                              |
-                backend / blockchain_client
+```bash
+bash network/besu/scripts/start-network.sh
+python network/besu/scripts/health-check.py --rpc-url http://127.0.0.1:8545 --expected-chain-id 20260720
 ```
 
-The Besu stack is under `network/besu`, pins `hyperledger/besu:26.7.0`, disables
-validator RPC, binds RPC node HTTP to `127.0.0.1`, and exposes only `ETH`,
-`NET`, and `WEB3`.
+RPC เปิดที่ `127.0.0.1:8545` โดยค่า port เปลี่ยนได้ผ่าน `RPC_HTTP_PORT`
+Grafana ของ Compose หลักอยู่ที่ [localhost:3001](http://localhost:3001)
+validator ปิด HTTP/WS RPC; RPC node เปิดเฉพาะ `ETH`, `NET`, `WEB3`
+ขั้นตอนสร้าง chain ใหม่อยู่ในคู่มือ operations และไม่ใช่ขั้นตอนเริ่มระบบเดิม
+Anvil Chain ID `31337` ใช้เฉพาะ environment ทดสอบแยกต่างหาก
 
-```powershell
-cd network/besu
-cp .env.example .env
-bash scripts/generate-network.sh --force
-bash scripts/start-network.sh
-```
-
-Do not call this production-ready until backup recovery, monitoring, security
-review, host deployment, and external signer validation have passed on the
-target environment.
-
-## Contract API
-
-`contracts/EvidenceRegistryV3.sol` is the only active deployment target.
+## API และข้อมูล V3
 
 ```solidity
-function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef) external;
-function recordAccess(
-    bytes32 evidenceRef,
-    bytes32 officerRef,
-    bytes32 accessSessionRef,
-    AccessAction action,
-    uint64 occurredAt
-) external;
-function getEvidence(bytes32 evidenceRef)
-    external view returns (bytes32, bytes32, uint64, address, bool);
-function getAccessBySession(bytes32 accessSessionRef)
-    external view returns (bytes32, bytes32, AccessAction, uint64, uint64, address);
-function evidenceExists(bytes32 evidenceRef) external view returns (bool);
-function accessSessionExists(bytes32 accessSessionRef) external view returns (bool);
-function pause() external;
-function unpause() external;
+recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef)
+recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef,
+             AccessAction action, uint64 occurredAt)
+getEvidence(bytes32 evidenceRef)
+getAccessBySession(bytes32 accessSessionRef)
+evidenceExists(bytes32 evidenceRef)
+accessSessionExists(bytes32 accessSessionRef)
+pause()
+unpause()
 ```
 
-## Roles
+`AccessAction.VIEW = 0`, `DOWNLOAD = 1` แต่ละ reference ต้องไม่เป็นศูนย์
+`recordEvidence` ปฏิเสธ evidence ซ้ำ; `recordAccess` ต้องพบ evidence เดิมและ session ต้องไม่ซ้ำ
+`occurredAt` เป็น Unix seconds จาก backend ต้องไม่เป็นศูนย์และอยู่ในช่วง uint64
+contract ไม่ห้ามเวลาย้อนหลังหรืออนาคตเพิ่มเติม ส่วน `recordedAt` มาจาก `block.timestamp`
+query ของรายการที่ไม่พบจะ revert; ใช้ `evidenceExists`/`accessSessionExists` ถ้าต้องการ boolean
 
-- `DEFAULT_ADMIN_ROLE`: grants and revokes roles.
-- `WRITER_ROLE`: calls `recordEvidence` and `recordAccess`.
-- `PAUSER_ROLE`: calls `pause` and `unpause`.
+`getEvidence` คืน `(evidenceHash, uploaderRef, recordedAt, writer, exists)`
+และ `getAccessBySession` คืน `(evidenceRef, officerRef, action, occurredAt, recordedAt, writer)`
+events คือ `EvidenceRecorded` และ `EvidenceAccessRecorded`; ดู indexed fields ใน interface
+`Paused`/`Unpaused` เป็น events ของ OpenZeppelin
 
-Use separate admin, backend writer, and validator/operator accounts. The
-constructor requires a non-zero admin address and does not silently make
-`msg.sender` the admin.
+## สิทธิ์และการส่งธุรกรรม
 
-## Events
+| Role/account | หน้าที่ |
+| --- | --- |
+| Deployer | deploy เท่านั้น ไม่ได้รับ admin โดยอัตโนมัติ |
+| `DEFAULT_ADMIN_ROLE` | grant/revoke roles |
+| `WRITER_ROLE` | บันทึก evidence/access |
+| `PAUSER_ROLE` | pause/unpause |
 
-```solidity
-event EvidenceRecorded(bytes32 indexed evidenceRef, bytes32 evidenceHash, bytes32 indexed uploaderRef, uint64 recordedAt, address indexed writer);
-event EvidenceAccessRecorded(bytes32 indexed evidenceRef, bytes32 indexed officerRef, bytes32 indexed accessSessionRef, AccessAction action, uint64 occurredAt, uint64 recordedAt, address writer);
-```
+constructor รับ admin address ที่ไม่เป็นศูนย์และให้ admin ทั้ง `DEFAULT_ADMIN_ROLE` และ `PAUSER_ROLE`
+Writer ต้องได้รับ role แยกต่างหาก การให้ Pauser คนใหม่ไม่ได้ถอน role ของ admin อัตโนมัติ
+แยก node identity, Deployer, Admin, Pauser และ Writer ออกจากกัน
 
-OpenZeppelin `Pausable` emits standard `Paused` and `Unpaused` events.
+Python ใช้ `BlockchainClientSettings` และ inject `TransactionSigner` เช่น `LocalPrivateKeySigner`
+ตั้ง `proof_of_authority=True` สำหรับ Besu QBFT, `chain_id=20260720`, contract address จาก manifest
+และ artifact `out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json`
+`signer_private_key` ยังมีเพื่อ compatibility แต่ integration ใหม่ควร inject signer
+client ไม่โหลด `.env` เอง; caller ต้องส่ง settings และ secret ที่จำเป็น
 
-V3 stores two access timestamps: `occurredAt` is the non-zero Unix-second
-application event time supplied by the backend, while `recordedAt` is the
-contract-controlled `block.timestamp`. V3 intentionally does not reject old
-or future `occurredAt` values beyond the non-zero uint64 requirement so that
-delayed reconciliation remains possible.
+เรียก `client.record_evidence(evidence_ref, evidence_hash, uploader_ref)` และ
+`client.record_access(evidence_ref, officer_ref, access_session_ref, AccessAction.DOWNLOAD, occurred_at)`
+client ใช้ pending nonce ลงนาม raw transaction ตรวจ receipt/event และรอ confirmations ตาม settings
+ผลมี tx hash, block number/timestamp, chain ID, contract address, confirmations และ decoded event
+ข้อผิดพลาดเป็น typed exceptions ใน `blockchain_client/exceptions.py`
 
-## Compile
+## Build และ tests แบบไม่แตะ chain จริง
 
-```powershell
-git clone --recurse-submodules https://github.com/Unsull/Blockchain.git
-cd Blockchain
+Python รองรับ `>=3.11,<3.13`; package versions อยู่ใน `pyproject.toml`
+Foundry CI pin `1.7.1`, Solidity `0.8.24`, EVM `london`
+ติดตั้ง dependencies ใน virtual environment แยกและตรวจ submodules ก่อน build
+
+```bash
 git submodule update --init --recursive
-forge build
-```
-
-Foundry is pinned to `forge 1.7.1` in CI. Solidity dependencies are pinned by
-Git submodules and `foundry.lock`; CI does not run `forge install`.
-
-## Test
-
-```powershell
+python -m pip install -e '.[dev]'
 forge fmt --check
 forge build
 forge test -vvv
 forge test --gas-report
-python -m pip install -e ".[dev]"
 ruff check .
 mypy blockchain_client
-pytest -m "not integration" -vv
+pytest -m 'not integration' -vv
 ```
 
-## Deploy
+CI มี 3 jobs: `solidity`, `python`, `besu-network`
+job เครือข่ายใช้ ephemeral accounts/chain สำหรับ deploy, smoke และ failure tests
+การลบ volumes ใน CI ใช้กับ environment ชั่วคราวเท่านั้น ไม่ใช่คำสั่งดูแล chain ปัจจุบัน
 
-```powershell
-$env:REGISTRY_ADMIN_ADDRESS="0x..."
-$env:DEPLOYER_PRIVATE_KEY="0x..."
-$env:CHAIN_ID="31337"
-forge script script/DeployEvidenceRegistryV3.s.sol:DeployEvidenceRegistryV3 --rpc-url $env:RPC_URL --broadcast
+## Deploy และจัดการ roles
+
+deploy เป็นงานสร้างธุรกรรมจริง ไม่ต้องทำซ้ำเพื่อแก้เอกสารหรือกู้ secret
+สคริปต์ `network/besu/scripts/deploy-registry.sh` โหลด `network/besu/.env`
+ต้องมี `CHAIN_ID`, `DEPLOYER_PRIVATE_KEY`, `ADMIN_PRIVATE_KEY`, `REGISTRY_ADMIN_ADDRESS`, `WRITER_ADDRESS`
+สคริปต์ตรวจ chain ID, build, deploy V3, grant Writer, grant Pauser ถ้ากำหนดแยกจาก admin,
+เขียน manifest และ `contract-address.env` แล้วตรวจ deployment
+เรียกจาก root ของ blockchain เฉพาะเมื่ออนุมัติ deploy ใหม่แล้ว
+
+งาน admin ใช้ `script/GrantWriterRole.s.sol`, `RevokeWriterRole.s.sol`,
+`GrantPauserRole.s.sol`, `RevokePauserRole.s.sol` กับ `ADMIN_PRIVATE_KEY`
+ส่วน `PauseRegistry.s.sol`/`UnpauseRegistry.s.sol` ใช้ `PAUSER_PRIVATE_KEY`
+ทุกงานระบุ `CHAIN_ID`, `CONTRACT_ADDRESS`, `RPC_URL` และ role address ที่เกี่ยวข้อง
+ไม่ใส่ private key ใน command line หรือเปิด shell tracing
+
+ตรวจ deployment ที่มีอยู่แบบอ่านอย่างเดียว:
+
+```bash
+python scripts/verify_deployment.py --manifest network/besu/deployments/20260720/EvidenceRegistryV3.json
 ```
 
-Deployment scripts fail fast when `CHAIN_ID` does not match, the target contract
-has no bytecode, or a role address is zero.
+`scripts/generate_deployment_manifest.py` และ `scripts/export_artifact.py` ใช้สร้าง metadata/ABI
+ดู options ด้วย `--help`; ไม่แก้ manifest ให้ชี้ address ใหม่โดยไม่ตรวจ chain
 
-## Grant Or Revoke Writer
+## Smoke และการวัดผล
 
-```powershell
-$env:CONTRACT_ADDRESS="0x..."
-$env:WRITER_ADDRESS="0x..."
-$env:ADMIN_PRIVATE_KEY="0x..."
-forge script script/GrantWriterRole.s.sol --rpc-url $env:RPC_URL --broadcast
-forge script script/RevokeWriterRole.s.sol --rpc-url $env:RPC_URL --broadcast
-```
+`examples/manual_smoke_test.py`, `examples/manual_negative_smoke_test.py` และ
+`network/besu/scripts/smoke-test.py` ส่งธุรกรรมจริง ต้องมี environment ทดสอบและ role ที่เหมาะสม
+negative test ตรวจ duplicate evidence/session, unauthorized writer และ paused state
+benchmark ส่งธุรกรรมจริงเช่นกัน; failure test หยุด validators จึงต้องวางแผนก่อนรัน
+คำสั่ง proof แบบ `verify-*` อ่านธุรกรรมเดิม ส่วน `record-*` เขียน chain
 
-Pauser role management uses `PAUSER_ADDRESS` with
-`script/GrantPauserRole.s.sol` and `script/RevokePauserRole.s.sol`.
+## การแก้ปัญหาโดยรักษาข้อมูลเดิม
 
-## Pause Or Unpause
-
-```powershell
-$env:CONTRACT_ADDRESS="0x..."
-$env:PAUSER_PRIVATE_KEY="0x..."
-forge script script/PauseRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
-forge script script/UnpauseRegistry.s.sol --rpc-url $env:RPC_URL --broadcast
-```
-
-## Python Client Usage
-
-```python
-from pathlib import Path
-from blockchain_client import (
-    AccessAction,
-    BlockchainClient,
-    BlockchainClientSettings,
-    LocalPrivateKeySigner,
-)
-
-settings = BlockchainClientSettings(
-    provider_uri="http://127.0.0.1:8545",
-    chain_id=31337,
-    contract_address="0x...",
-    artifact_path=Path("out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json"),
-    confirmation_blocks=2,
-)
-
-signer = LocalPrivateKeySigner("0x...")
-client = BlockchainClient(settings, signer=signer)
-result = client.record_evidence(evidence_ref, evidence_hash, uploader_ref)
-access = client.record_access(
-    evidence_ref,
-    officer_ref,
-    access_session_ref,
-    AccessAction.DOWNLOAD,
-    occurred_at_unix_seconds,
-)
-```
-
-`signer_private_key` remains as a temporary backward-compatible setting, but new
-integrations should inject a `TransactionSigner`. The client allocates nonces
-from pending chain state, waits for configurable confirmations, validates the
-emitted event against the input and receipt, and returns canonical lowercase
-`0x`-prefixed bytes32 values.
-
-## Environment Variables
-
-- `RPC_URL`: Foundry script RPC URL.
-- `REGISTRY_ADMIN_ADDRESS`: non-zero admin address for deployment.
-- `DEPLOYER_PRIVATE_KEY`: deployment signer.
-- `ADMIN_PRIVATE_KEY`: role-management signer.
-- `PAUSER_PRIVATE_KEY`: pause/unpause signer.
-- `CONTRACT_ADDRESS`: deployed registry address.
-- `WRITER_ADDRESS`: backend writer address.
-- `WRITER_PRIVATE_KEY`: writer signer key for local examples only.
-- `UNAUTHORIZED_PRIVATE_KEY`: non-writer key for negative smoke tests.
-- `MIN_CONFIRMATIONS`: client confirmation depth.
-- `ARTIFACT_PATH`: Foundry artifact path.
-
-The Python client accepts structured settings directly and does not read
-secrets from global module state.
-
-Use `.env.example` for production shape and `.env.anvil.example` only as local
-Anvil scaffolding. Neither file contains private keys.
+- ไม่มี artifact: รัน `forge build` และตรวจ path ที่ตั้งไว้
+- Chain ID ไม่ตรง: ตรวจ RPC URL/manifest/environment; ไม่ reset network อัตโนมัติ
+- ไม่พบ bytecode: ตรวจ chain, address และสถานะ sync ก่อนตัดสินใจเรื่อง deployment
+- ไม่มีสิทธิ์: ตรวจ signer address และ role ของงานนั้น; อย่าเพิ่มสิทธิ์ทุกชนิดให้ Writer
+- RPC ไม่ตอบ/ไม่มี peers: ตรวจ containers, port และ static peers ตามคู่มือ operations
 
 ## การจัดการ Secret และ Private Key สำหรับ Blockchain
 
@@ -289,178 +208,7 @@ key รั่วให้ grant writer ใหม่ก่อน revoke ตัว
 ไป account ใหม่ด้วยขั้นตอนที่ตรวจสอบได้ ห้าม generate key ทดแทนหรือ redeploy อัตโนมัติ
 โดยยังไม่ประเมินผลกระทบ สำหรับ production จริงสามารถพิจารณา Vault/HSM เป็นขั้นถัดไปได้
 
-## Smoke Tests
 
-After deploying and granting `WRITER_ROLE`, run:
+ขั้นตอนเข้ารหัส ตรวจ checksum และ restore อยู่ใน [backup-recovery.md](network/besu/docs/backup-recovery.md)
 
-```powershell
-python .\examples\manual_smoke_test.py
-python .\examples\manual_negative_smoke_test.py
-```
-
-The negative smoke test checks duplicate evidence, duplicate access session,
-unauthorized writer rejection, and paused contract rejection.
-
-## Deployment Manifests
-
-Generate and verify manifests after deploy:
-
-```powershell
-python scripts/generate_deployment_manifest.py --network anvil --rpc-url $env:RPC_URL --chain-id 31337 --contract-name EvidenceRegistryV3 --contract-address $env:CONTRACT_ADDRESS --deployer-address 0x... --admin-address $env:REGISTRY_ADMIN_ADDRESS --artifact out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json --output deployments/anvil/EvidenceRegistryV3.manifest.json
-python scripts/verify_deployment.py --manifest deployments/anvil/EvidenceRegistryV3.manifest.json
-python scripts/export_artifact.py --output deployments/anvil/EvidenceRegistryV3.artifact.json
-```
-
-## Transaction Result Format
-
-Python transaction submissions return:
-
-- `tx_hash`
-- `block_number`
-- `block_timestamp` in UTC
-- `contract_address`
-- `chain_id`
-- `confirmations`
-- decoded event data
-
-## Backend Integration Contract
-
-Backend calls:
-
-- `recordEvidence(evidence_ref, evidence_hash, uploader_ref)`
-- `recordAccess(evidence_ref, officer_ref, access_session_ref, action, occurredAt)`
-
-Backend remains responsible for authentication, user authorization,
-real-identity mapping, evidence identity mapping, access session generation,
-watermark logic, storage, databases, and proxy keys.
-
-The blockchain module is responsible for contract authorization, signed
-transaction submission, receipt validation, event decoding, transaction
-verification, and chain state queries.
-
-## Error Handling
-
-The contract uses custom errors for invalid zero values, duplicates, missing
-records, and invalid admin addresses. Python raises typed exceptions from
-`blockchain_client.exceptions`; it does not swallow failures with `None`.
-
-## Common Errors
-
-### `artifact_path does not exist`
-
-Cause: the contract has not been compiled yet.
-
-Fix:
-
-```powershell
-forge build
-```
-
-The Python client expects this artifact by default:
-
-```text
-out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json
-```
-
-### `no deployed bytecode at contract address`
-
-Common causes:
-
-- `CONTRACT_ADDRESS` is wrong.
-- Anvil was restarted.
-- The client is connected to a different chain.
-- The contract has not been deployed.
-
-Deploy the registry again and update `CONTRACT_ADDRESS`.
-
-### `chain ID mismatch`
-
-Check the active RPC chain:
-
-```powershell
-cast chain-id --rpc-url http://127.0.0.1:8545
-```
-
-For the local Anvil workflow this should return:
-
-```text
-31337
-```
-
-### `AccessControlUnauthorizedAccount`
-
-Cause: the signer does not have `WRITER_ROLE`, `PAUSER_ROLE`, or
-`DEFAULT_ADMIN_ROLE` for the action being attempted.
-
-For writer transactions, run `GrantWriterRole.s.sol` with the admin key:
-
-```powershell
-$env:CONTRACT_ADDRESS="0x..."
-$env:WRITER_ADDRESS="0x..."
-$env:ADMIN_PRIVATE_KEY="0x..."
-forge script script/GrantWriterRole.s.sol:GrantWriterRole --rpc-url $env:RPC_URL --broadcast -vvvv
-```
-
-### PowerShell activation is blocked
-
-Allow activation for the current PowerShell process only:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-```
-
-### `forge` not found
-
-Close and reopen Git Bash, then run:
-
-```bash
-source ~/.bashrc
-foundryup
-forge --version
-```
-
-On Windows PowerShell, check whether the executable is on `PATH`:
-
-```powershell
-where.exe forge
-forge --version
-```
-
-## Pull Request Workflow
-
-After local tests pass, open a pull request:
-
-```text
-fix/blockchain-production-readiness -> main
-```
-
-Do not push directly to `main`. Require PR review and passing checks before
-merge. Protect `main` with required status checks for `solidity` and `python`.
-
-The PR URL is:
-
-```text
-https://github.com/Unsull/Blockchain/pull/new/fix/blockchain-production-readiness
-```
-
-GitHub Actions runs two jobs:
-
-- `solidity`: uses recursive submodules, Foundry `1.7.1`, then runs
-  `forge fmt --check`, `forge build`, `forge test -vvv`, and gas report.
-- `python`: runs `ruff`, `mypy`, and `pytest -m "not integration" -vv`.
-- `besu-network`: validates the Besu Docker Compose and network scripts without
-  using real secrets.
-
-Wait for both jobs to pass:
-
-- Solidity CI: Passed
-- Python CI: Passed
-
-If no workflow appears in GitHub Actions, check that Actions are enabled for
-the repository and that workflows from the feature branch are allowed to run.
-
-## Migration
-
-The previous root FastAPI demo was moved to `examples/legacy_api_example.py`.
-See `MIGRATION.md` for breaking changes.
+ดู [รายงาน cleanup และ tests](network/besu/docs/maintenance-audit.md) สำหรับหลักฐาน dependency รายไฟล์และข้อจำกัดผลตรวจรอบนี้

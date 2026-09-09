@@ -1,17 +1,21 @@
-# Besu 26.7.0 Discovered Prometheus Metrics
+# รายการ Prometheus metrics ที่ตรวจพบใน Besu 26.7.0
 
-## Environment
+รายงานนี้เป็น snapshot วันที่ 4 สิงหาคม 2026 ตาม timestamp เดิม ไม่ใช่ผลตรวจ live ของวันที่ปรับเอกสาร
+เก็บตัวเลข/metric names ไว้เพื่ออ้างอิงและไม่ตีความว่าเป็น evidence/access totals ของ V3
+ดู [คู่มือ monitoring](../docs/monitoring-dashboard.md) สำหรับ Compose หลักและ Grafana port 3001
 
-- Besu version: 26.7.0
-- Node count: 5
-- Validator count: 4
-- RPC node count: 1
-- Prometheus scrape interval: 15s
-- Discovery timestamp (UTC): 2026-08-04T03:25:20.459293+00:00
+## Environment ที่ตรวจในอดีต
 
-## Target Status
+- รุ่น Besu: 26.7.0
+- จำนวน nodes: 5
+- จำนวน validators: 4
+- จำนวน RPC nodes: 1
+- รอบ scrape ของ Prometheus: 15s
+- เวลาตรวจ (UTC): 2026-08-04T03:25:20.459293+00:00
 
-| Instance | Health | Last scrape | Scrape duration (s) | Last error |
+## สถานะ targets ณ เวลาตรวจ
+
+| Instance | สถานะ | Scrape ล่าสุด | ระยะเวลา (วินาที) | ข้อผิดพลาดล่าสุด |
 | --- | --- | --- | ---: | --- |
 | rpc-node:9545 | up | 2026-08-04T03:25:07.691307881Z | 0.042897341 | - |
 | validator-1:9545 | up | 2026-08-04T03:25:10.514261779Z | 0.034348074 | - |
@@ -19,1150 +23,1150 @@
 | validator-3:9545 | up | 2026-08-04T03:25:13.201035221Z | 0.025018897 | - |
 | validator-4:9545 | up | 2026-08-04T03:25:07.991251577Z | 0.029311279 | - |
 
-## Discovered Metrics
+## Metrics ที่พบ
 
 ### `besu_bal_blocks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_block_processing_conflicted_transactions_counter_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_block_processing_parallelized_transactions_counter_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_block_processing_state_root_calculation_duration_seconds`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, quantile
-- Sample value: `0.000111541`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0.000111541`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_block_processing_state_root_calculation_duration_seconds_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `52`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `52`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_block_processing_state_root_calculation_duration_seconds_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0.010140167000000002`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0.010140167000000002`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_chain_head_gas_limit`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `9007199254740991`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `9007199254740991`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_chain_head_gas_used`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_chain_head_gas_used_counter_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_chain_head_timestamp`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1785813907`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1785813907`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_chain_head_transaction_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: transaction count
-- Limitations: Describes chain-head transactions, not application evidence records.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: จำนวนธุรกรรมใน head block
+- ข้อจำกัด: อธิบายธุรกรรมใน head block ไม่ใช่จำนวนหลักฐานของ application
 
 ### `besu_blockchain_chain_head_transaction_count_counter_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Describes chain-head transactions, not application evidence records.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: อธิบายธุรกรรมใน head block ไม่ใช่จำนวนหลักฐานของ application
 
 ### `besu_blockchain_difficulty`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1647`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1647`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_account_flat_database_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_account_missing_flat_database_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_account_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_storagevalue_flat_database_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_storagevalue_missing_flat_database_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_blockchain_get_storagevalue_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_bfttimerexecutor_qbft_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: QBFT or consensus metrics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: metrics ของ QBFT/consensus
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_bfttimerexecutor_qbft_completed_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `49`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `49`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_bfttimerexecutor_qbft_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_bfttimerexecutor_qbft_queue_length_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `3`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `3`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_bfttimerexecutor_qbft_rejected_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_bfttimerexecutor_qbft_submitted_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `52`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Executor activity only; it does not expose validator votes or quorum.
+- ค่าตัวอย่าง: `52`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: บอกกิจกรรม executor เท่านั้น ไม่แสดง votes หรือ quorum ของ validators
 
 ### `besu_executors_ethscheduler_blockcreation_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_blockcreation_completed_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `14`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `14`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_blockcreation_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `2`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `2`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_blockcreation_queue_length_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_blockcreation_rejected_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_blockcreation_submitted_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `14`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `14`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_chaindatapruner_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_chaindatapruner_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_computation_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_computation_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_services_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_services_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `3`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `3`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_timer_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_timer_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_completed_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_dropped_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_queue_length_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_rejected_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_transactions_submitted_tasks_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_workers_active_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_executors_ethscheduler_workers_pool_size_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `8`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `8`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_network_vertx_eventloop_pending_tasks`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_network_vertx_worker_pool_completed_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, poolName, poolType
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_network_vertx_worker_pool_rejected_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, poolName, poolType
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_network_vertx_worker_pool_submitted_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, poolName, poolType
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_peers_connected_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `4`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `4`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_disconnected_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, disconnectReason, initiator, instance, job
-- Sample value: `1`
-- Instances (up to 5 sampled series): validator-2:9545, validator-3:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-2:9545, validator-3:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_inflight_request_gauge`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, taskName
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_peer_count_by_client`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, client, instance, job
-- Sample value: `4`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `4`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_pending_peer_requests_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_request_time`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, quantile, taskName
-- Sample value: `0.004526458`
-- Instances (up to 5 sampled series): validator-2:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `0.004526458`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-2:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_request_time_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, taskName
-- Sample value: `5`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `5`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_peers_request_time_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, taskName
-- Sample value: `0.45808915600000005`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `0.45808915600000005`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `besu_rpc_active_http_connection_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545
-- Likely dashboard use: RPC metrics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545
+- การใช้งานใน dashboard: metrics ของ RPC
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_rpc_request_time`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: none
-- Sample value: `no sample`
-- Instances (up to 5 sampled series): none in bounded sample
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `no sample`
+- Instances (ตัวอย่างไม่เกิน 5 series): none in bounded sample
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_rpc_request_time_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: none
-- Sample value: `no sample`
-- Instances (up to 5 sampled series): none in bounded sample
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `no sample`
+- Instances (ตัวอย่างไม่เกิน 5 series): none in bounded sample
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_rpc_request_time_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: none
-- Sample value: `no sample`
-- Instances (up to 5 sampled series): none in bounded sample
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `no sample`
+- Instances (ตัวอย่างไม่เกิน 5 series): none in bounded sample
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_chain_download_pipeline_processed_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: none
-- Sample value: `no sample`
-- Instances (up to 5 sampled series): none in bounded sample
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `no sample`
+- Instances (ตัวอย่างไม่เกิน 5 series): none in bounded sample
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_chain_download_pipeline_restarts_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, reason
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_in_sync`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: sync status
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: สถานะ sync
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_sync_duration_bucket`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, le, name
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_sync_duration_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, name
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_sync_duration_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, name
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_task`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, quantile, taskName
-- Sample value: `0.000451426`
-- Instances (up to 5 sampled series): validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0.000451426`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_task_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, taskName
-- Sample value: `9`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `9`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_synchronizer_task_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, taskName
-- Sample value: `0.093371647`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0.093371647`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_blob_cache_size`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_blob_map_size`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_messages_expired_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, message
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_number_of_transactions`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, layer
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: transaction pool
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: pool ธุรกรรมรอประมวลผล
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_number_of_transactions_by_type`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, layer, type
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_space_used`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, layer
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `besu_transaction_pool_unique_senders`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, layer
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `ethereum_best_known_block_number`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1646`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1646`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `ethereum_blockchain_finalized_block`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `ethereum_blockchain_height`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1646`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: block height, block production rate, block interval
-- Limitations: Chain height is not transaction, evidence, or access-record count.
+- ค่าตัวอย่าง: `1646`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ความสูง block, อัตราสร้าง block, ช่วงเวลาระหว่าง blocks
+- ข้อจำกัด: ความสูง chain ไม่ใช่จำนวนธุรกรรม evidence หรือ access
 
 ### `ethereum_blockchain_safe_block`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `ethereum_peer_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `4`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: peer count
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `4`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: จำนวน peers
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `ethereum_peer_count_snap_server`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `ethereum_peer_limit`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `25`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Direct P2P connections; this is not a QBFT quorum measurement.
+- ค่าตัวอย่าง: `25`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: จำนวนการเชื่อมต่อ P2P โดยตรง ไม่ใช่ค่า QBFT quorum
 
 ### `jvm_buffer_pool_capacity_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_buffer_pool_used_buffers`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `1`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_buffer_pool_used_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `1`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_classes_currently_loaded`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `11812`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `11812`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_classes_loaded_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `11821`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `11821`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_classes_unloaded_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `9`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `9`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_compilation_time_seconds_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `106.732`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `106.732`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_gc_collection_seconds_count`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, gc, instance, job
-- Sample value: `20`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `20`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_gc_collection_seconds_sum`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, gc, instance, job
-- Sample value: `1.239`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1.239`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_committed_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, area, instance, job
-- Sample value: `76546048`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `76546048`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_init_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, area, instance, job
-- Sample value: `113246208`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `113246208`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_max_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, area, instance, job
-- Sample value: `1799356416`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1799356416`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_objects_pending_finalization`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_allocated_bytes_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `2035840`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `2035840`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_collection_committed_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `18874368`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `18874368`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_collection_init_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `23068672`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `23068672`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_collection_max_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `-1`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `-1`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_collection_used_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_committed_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `2555904`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `2555904`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_init_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `2555904`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `2555904`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_max_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `5840896`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `5840896`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_pool_used_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, pool
-- Sample value: `1980544`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1980544`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_memory_used_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, area, instance, job
-- Sample value: `51123648`
-- Instances (up to 5 sampled series): validator-1:9545, validator-2:9545, validator-4:9545
-- Likely dashboard use: JVM memory
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `51123648`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545, validator-2:9545, validator-4:9545
+- การใช้งานใน dashboard: หน่วยความจำ JVM
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_runtime_info`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, runtime, vendor, version
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_current`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `56`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: thread count
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `56`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: จำนวน threads
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_daemon`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `15`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `15`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_deadlocked`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_deadlocked_monitor`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `0`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_peak`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `57`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `57`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_started_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `66`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `66`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `jvm_threads_state`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, state
-- Sample value: `0`
-- Instances (up to 5 sampled series): validator-1:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `0`
+- Instances (ตัวอย่างไม่เกิน 5 series): validator-1:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_cpu_seconds_total`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `140.06`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `140.06`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_max_fds`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1048576`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1048576`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_open_fds`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `369`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: open file descriptors
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `369`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: จำนวน file descriptors ที่เปิด
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_release`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job, version
-- Sample value: `1`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_resident_memory_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `372989952`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: process memory
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `372989952`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: หน่วยความจำ process
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_start_time_seconds`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `1785813737.455`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `1785813737.455`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
 ### `process_virtual_memory_bytes`
 
-- Result type: vector
+- ชนิดผลลัพธ์: vector
 - Labels: __name__, instance, job
-- Sample value: `5953536000`
-- Instances (up to 5 sampled series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
-- Likely dashboard use: Supporting node diagnostics
-- Limitations: Metric semantics are limited to the Besu process and labels shown.
+- ค่าตัวอย่าง: `5953536000`
+- Instances (ตัวอย่างไม่เกิน 5 series): rpc-node:9545, validator-1:9545, validator-2:9545, validator-3:9545, validator-4:9545
+- การใช้งานใน dashboard: ใช้ประกอบการวิเคราะห์ node
+- ข้อจำกัด: ความหมายจำกัดอยู่ที่ Besu process และ labels ที่แสดง
 
-## Metrics Required for Dashboard
+## Metrics ที่ dashboard ต้องใช้
 
-- **node availability**: confirmed available; metrics: `up`
-- **block height**: confirmed available; metrics: `ethereum_blockchain_height`
-- **block production rate**: requires derived PromQL; metrics: `ethereum_blockchain_height`; PromQL: `rate(ethereum_blockchain_height[5m])`
-- **block interval**: requires derived PromQL; metrics: `ethereum_blockchain_height`; PromQL: `1 / rate(ethereum_blockchain_height[5m])`
-- **peer count**: confirmed available; metrics: `ethereum_peer_count`
-- **transaction pool**: confirmed available; metrics: `besu_transaction_pool_number_of_transactions`
-- **transaction count**: confirmed available; metrics: `besu_blockchain_chain_head_transaction_count`
-- **JVM memory**: confirmed available; metrics: `jvm_memory_used_bytes`
-- **process memory**: confirmed available; metrics: `process_resident_memory_bytes`
-- **CPU**: requires derived PromQL; metrics: `process_cpu_seconds_total`; PromQL: `rate(process_cpu_seconds_total[5m])`
-- **thread count**: confirmed available; metrics: `jvm_threads_current`
-- **garbage collection**: confirmed available; metrics: `jvm_gc_collection_seconds_count`, `jvm_gc_collection_seconds_sum`
-- **open file descriptors**: confirmed available; metrics: `process_open_fds`
-- **QBFT or consensus metrics**: partially available; metrics: `besu_executors_bfttimerexecutor_qbft_active_threads_current`
-- **RPC metrics**: confirmed available; metrics: `besu_rpc_active_http_connection_count`
-- **sync status**: confirmed available; metrics: `besu_synchronizer_in_sync`
+- **ความพร้อมใช้งานของ nodes**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `up`
+- **ความสูง block**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `ethereum_blockchain_height`
+- **อัตราสร้าง block**: ต้องคำนวณผ่าน PromQL; metrics: `ethereum_blockchain_height`; PromQL: `rate(ethereum_blockchain_height[5m])`
+- **ช่วงเวลาระหว่าง blocks**: ต้องคำนวณผ่าน PromQL; metrics: `ethereum_blockchain_height`; PromQL: `1 / rate(ethereum_blockchain_height[5m])`
+- **จำนวน peers**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `ethereum_peer_count`
+- **pool ธุรกรรมรอประมวลผล**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `besu_transaction_pool_number_of_transactions`
+- **จำนวนธุรกรรมใน head block**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `besu_blockchain_chain_head_transaction_count`
+- **หน่วยความจำ JVM**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `jvm_memory_used_bytes`
+- **หน่วยความจำ process**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `process_resident_memory_bytes`
+- **CPU**: ต้องคำนวณผ่าน PromQL; metrics: `process_cpu_seconds_total`; PromQL: `rate(process_cpu_seconds_total[5m])`
+- **จำนวน threads**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `jvm_threads_current`
+- **การเก็บคืนหน่วยความจำ**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `jvm_gc_collection_seconds_count`, `jvm_gc_collection_seconds_sum`
+- **จำนวน file descriptors ที่เปิด**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `process_open_fds`
+- **metrics ของ QBFT/consensus**: พบข้อมูลบางส่วน; metrics: `besu_executors_bfttimerexecutor_qbft_active_threads_current`
+- **metrics ของ RPC**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `besu_rpc_active_http_connection_count`
+- **สถานะ sync**: ตรวจพบ ณ เวลาที่เก็บ snapshot; metrics: `besu_synchronizer_in_sync`
 
-QBFT health must be inferred from block progress, validator target availability, and peer connectivity. These indicators are not a direct quorum metric.
+สุขภาพ QBFT ต้องประเมินร่วมจาก block progress, target availability และ peer connectivity; ไม่ใช่ direct quorum metric

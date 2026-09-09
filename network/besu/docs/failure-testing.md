@@ -1,24 +1,21 @@
-# Failure Testing
+# การทดสอบเครือข่ายขัดข้อง
 
-The scripted subset is:
+`scripts/failure-test.py` เรียก Docker เพื่อหยุด/เริ่ม validators จึงกระทบ availability
+ใช้เฉพาะ environment ทดสอบหรือช่วงเวลาที่อนุมัติแล้ว ไม่ใช่ read-only health check
 
-- stop `validator-4`; block production must continue
-- stop `validator-3` and `validator-4`; block production must halt
-- restart validators; block production must resume
+สคริปต์ทดสอบหยุด validator-4 แล้ว block ยังเพิ่ม, หยุด validator-3 และ validator-4 แล้ว block หยุด,
+จากนั้นเริ่ม validators กลับและตรวจ block production ฟื้นตัว
 
-Run:
+จาก root ของ blockchain:
 
 ```bash
 python network/besu/scripts/failure-test.py --rpc-url http://127.0.0.1:8545
 ```
 
-Record JSON output from `network/besu/logs/failure-test-results.json`.
+ผลอยู่ `network/besu/logs/failure-test-results.json` ซึ่ง Git ignore
+ตรวจ options ระยะเวลารอด้วย `--help`; เก็บ timestamp/config และผลจริงก่อนสรุปว่าผ่าน
 
-Additional manual scenarios:
-
-- stop `rpc-node`; validators continue producing blocks
-- restart `rpc-node`; it syncs back
-- `docker compose down` followed by `up -d`; volumes retain chain data
-- remove `rpc-node` volume; it resyncs from validators
-- revoke `WRITER_ROLE`; write transaction fails
-- pause the contract; write transaction fails; unpause restores writes
+กรณีเพิ่มเติม เช่น RPC หยุดแล้ว sync กลับ, การกู้ data ของ node, revoke Writer หรือ pause contract
+ต้องมีแผนแยก เพราะบางกรณีลบ data หรือเปลี่ยน role/state จริง
+ทดสอบ volume recovery บนสำเนาเครือข่ายที่แยกไว้ ไม่ลบ volumes ของระบบปัจจุบันระหว่าง audit
+ดู [backup-recovery](backup-recovery.md)

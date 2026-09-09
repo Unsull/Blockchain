@@ -1,182 +1,61 @@
-# Besu QBFT Monitoring Dashboard
+# Monitoring และ Grafana ของ Besu QBFT
 
-## Purpose
+Compose หลักรวม Prometheus และ Grafana สำหรับ Besu `26.7.0` ทั้ง 4 validators และ RPC 1 ตัว
+Prometheus scrape `:9545` ทุก 15 วินาที; Grafana datasource UID `prometheus`
+dashboard UID `besu-qbft-overview` อยู่โฟลเดอร์ **Besu** ชื่อ **Besu QBFT Private Network Overview**
 
-The **Besu QBFT Private Network Overview** dashboard provides operational visibility for
-the integration/staging network. It monitors node availability, chain progress, peer
-connectivity, transaction-pool state, JVM resources, and inferred network health. It does
-not expose evidence records, officer identities, secrets, or validator keys.
+## Ports และการเริ่มระบบ
 
-## Architecture
+เริ่มระบบเดิมตาม [operations](operations.md) โดยใช้ Compose หลัก
+Grafana: [localhost:3001](http://127.0.0.1:3001/d/besu-qbft-overview), RPC: `127.0.0.1:8545`
+Prometheus เข้าถึงใน Docker network ที่ `prometheus:9090`; Compose หลักไม่ publish port นี้ไป host
 
-```text
-Besu validator and RPC metrics -> Prometheus -> Grafana
-```
-
-Prometheus scrapes all four validators and the RPC node every 15 seconds. Grafana uses the
-provisioned Prometheus datasource with UID `prometheus`.
-
-## Start Monitoring
-
-From the repository root, run:
+เมื่อต้องใช้ Prometheus API จาก host สำหรับ benchmark/discovery สามารถใช้ monitoring override
+คำสั่งต่อไปนี้เปลี่ยน published ports จึงต้องเลือกใช้ให้ตรงกับ environment:
 
 ```bash
-docker compose \
-  --project-directory network/besu \
-  --env-file network/besu/.env \
-  -f network/besu/docker-compose.yml \
-  -f network/besu/docker-compose.monitoring.yml \
-  up -d
+docker compose --project-directory network/besu --env-file network/besu/.env -f network/besu/docker-compose.yml -f network/besu/docker-compose.monitoring.yml up -d
 ```
 
-The local endpoints are:
+override เพิ่ม Prometheus ที่ `127.0.0.1:9090` และ Grafana ที่ `127.0.0.1:3000`
+Compose merge ports กับไฟล์หลัก จึงยังมี Grafana `3001` ด้วย ไม่ได้ย้าย port หลักไป `3000`
+ตรวจรายการจริงด้วย `docker compose ... ps`; ตรวจ config แบบ `--quiet` เพื่อไม่พิมพ์ credentials
 
-- Grafana: <http://127.0.0.1:3000>
-- Prometheus: <http://127.0.0.1:9090>
-- Besu RPC: <http://127.0.0.1:8545>
+## Credentials และ targets
 
-These host ports bind only to `127.0.0.1`. Validator RPC ports are not published.
+บัญชีเริ่มต้นมาจาก `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD` ใน `.env`
+ห้ามใส่ค่าจริงในเอกสาร; ถ้า Grafana volume มีบัญชีแล้ว การแก้ environment ไม่ใช่การเปลี่ยน password ของบัญชีเดิม
+ตรวจหรือเปลี่ยนผ่านกระบวนการดูแล Grafana ที่เหมาะสม
 
-## Grafana Credentials
+เมื่อเปิด Prometheus host port แล้ว ดู `/targets` หรือ `/api/v1/targets`
+คาดว่า `validator-1:9545` ถึง `validator-4:9545` และ `rpc-node:9545` เป็น `UP`
+UP หมายถึง scrape สำเร็จ ไม่ได้พิสูจน์ consensus participation
+`scripts/validate-monitoring-dashboard.py` ตรวจ dashboard/queries ผ่าน APIs; ใช้ `--help`
+และกำหนด `--grafana-url http://127.0.0.1:3001` ให้ตรง port หลัก
 
-The administrator username comes from `GRAFANA_ADMIN_USER` and the password comes from
-`GRAFANA_ADMIN_PASSWORD` in `network/besu/.env`. Change the password in that ignored local
-file before starting Grafana. Do not commit the value. If the Grafana data volume already
-contains an administrator account, changing the environment variable does not replace the
-stored password; use Grafana's administrator password-reset procedure instead.
+## ความหมายของ panels
 
-## Verify Prometheus Targets
+| กลุ่ม | สิ่งที่แสดงและข้อจำกัด |
+| --- | --- |
+| Network Overview | 5 node targets, 4 validator targets, RPC state, block height, peers, sync |
+| Blockchain Activity | block rate/interval จากช่วง 5 นาที, tx pool, transactions ใน head block, HTTP connections |
+| Node Resources | JVM/process memory, CPU cores ที่ process ใช้, threads, file descriptors, GC |
+| Consensus and Network Health | ความต่าง block height, peers, availability, inferred stall และ QBFT timer threads |
+| Monitoring Health | scrape state และ memory เทียบ threshold 1.5 GB; alert มี `for` duration แยก |
 
-Open <http://127.0.0.1:9090/targets> or query:
+stall ใช้ RPC height ที่ไม่เพิ่มในช่วง 1 นาที ต้องดู target health/sample gaps/startup ประกอบ
+block-height divergence คือ max−min ของ nodes ที่มองเห็น; ค่า 1 อาจเกิดช่วง scrape คาบเกี่ยว
+peer count ไม่ใช่ quorum; QBFT timer threads ไม่ใช่จำนวน votes; CPU ไม่ใช่เปอร์เซ็นต์ของทั้ง host
+transaction count ใน head block ไม่ใช่ยอดธุรกรรมสะสม; tx pool ไม่ใช่ธุรกรรมยืนยันแล้ว
+metrics ไม่บอกจำนวน evidence/access ของ V3 และ Grafana ไม่ใช่ proof ของธุรกรรมรายรายการ
 
-```bash
-curl http://127.0.0.1:9090/api/v1/targets
-```
+## Export และข้อมูลอ้างอิง
 
-The targets `validator-1:9545` through `validator-4:9545` and `rpc-node:9545` should all be
-`UP`. Target health proves that Prometheus can scrape metrics; it does not prove consensus
-participation.
+export panel/data ผ่าน Grafana; image rendering ต้องมี renderer ที่รองรับใน installation
+Prometheus query API เก็บ JSON ได้ เช่น `ethereum_blockchain_height{job="besu"}`
+ระบุ UTC timestamp, query/range/step, config และ version เมื่อใช้ในรายงานวิจัย
+ดู [metric inventory](../monitoring/discovered-metrics.md) ซึ่งเป็น snapshot เก่า ไม่ใช่สถานะ live
+ตรวจ proof ของธุรกรรมด้วย [transaction proofs](../proofs/README.md)
 
-## Locate the Dashboard
-
-Sign in to Grafana, open **Dashboards**, select the **Besu** folder, and open **Besu QBFT
-Private Network Overview**. Provisioning uses UID `besu-qbft-overview`, so the direct path
-is `/d/besu-qbft-overview` after Grafana starts.
-
-## Dashboard Sections
-
-### Network Overview
-
-Shows the number of reachable Besu targets and validators, RPC target state, maximum block
-height, RPC peer count, and RPC synchronization state. A healthy baseline is five Besu
-targets and four validator targets. The live Besu 26.7.0 discovery observed
-`besu_synchronizer_in_sync=1` for an in-sync node.
-
-### Blockchain Activity
-
-Shows block height by node, derived block rate, estimated block interval, current
-transaction-pool size, transactions in the chain-head block, and active RPC HTTP
-connections. Block rate and interval use a five-minute range and can be distorted during
-startup, scrape gaps, or a stall. A very large interval signals near-zero progress; it is
-not forced to look normal.
-
-### Node Resources
-
-Shows resident process memory, JVM heap and non-heap memory areas, process CPU cores, JVM
-threads, open file descriptors, and garbage-collection event/time rates. CPU is process
-CPU, not host percentage. JVM memory areas and garbage collectors remain separate series.
-
-### Consensus and Network Health
-
-Shows block-height divergence, peers by node, availability history, an inferred block-stall
-state, and QBFT timer executor threads. Block-height divergence is the difference between
-the highest and lowest monitored node heights. Zero is aligned; one can occur briefly near
-a scrape boundary; sustained values of two or more require investigation.
-
-The stall indicator reports `STALLED` when the RPC node height has not increased over one
-minute. The window covers multiple five-second block periods and four 15-second scrape
-intervals, reducing normal scrape-boundary false positives. Startup, missing samples, or
-RPC target failure still require checking target health and logs.
-
-### Monitoring Health
-
-Shows scrape state by node and whether process resident memory exceeds the existing 1.5 GB
-alert threshold. The dashboard comparison is immediate; the Prometheus alert rule applies
-its configured `for` duration before firing.
-
-## Metric Semantic Warnings
-
-- Block height is chain progress, not evidence count or transaction count.
-- Chain-head transaction count describes the current head block, not a cumulative total.
-- Transaction-pool size is pending work at a node, not confirmed transactions.
-- Peer count measures direct P2P connections. It is not QBFT quorum because the RPC node's
-  direct topology does not describe validator voting relationships.
-- Validator target availability does not prove participation in the current QBFT round.
-- QBFT timer executor threads are internal work activity, not votes, quorum, or consensus
-  success.
-- Block-height divergence and block-stall state are inferred indicators, not direct QBFT
-  telemetry.
-
-## Why Evidence Count Is Not Available
-
-Besu 26.7.0 process metrics do not expose application-level EvidenceRegistry record counts.
-An evidence count requires a trusted application index, decoded contract events, or a
-purpose-built read model. Reusing block height or transaction count would be semantically
-incorrect, so the dashboard intentionally omits Total Evidence and Total Access panels.
-
-## Why Grafana Is Not Transaction Proof
-
-Grafana aggregates time-series process metrics and is not a blockchain explorer. It cannot
-prove an individual transaction, its calldata, emitted events, or resulting contract state.
-Verify transaction correctness with the receipt, decoded events, block inclusion, and
-contract reads against the expected chain and contract address.
-
-## Export a Panel Image
-
-Open a panel menu and select **Share**, then use the image/render option available in the
-local Grafana installation. A rendered-image export may require Grafana's image-renderer
-component; without it, capture the panel through the browser or export its data instead.
-Never include credentials or sensitive browser content in screenshots.
-
-## Export Prometheus Query Results
-
-Use Prometheus **Graph** view and download CSV where available, or save the HTTP API JSON:
-
-```bash
-curl --get http://127.0.0.1:9090/api/v1/query \
-  --data-urlencode 'query=ethereum_blockchain_height{job="besu"}' \
-  --output block-height.json
-```
-
-For research exports, record the UTC timestamp, query, range, step, Besu version, and chain
-configuration alongside the data. Metrics are operational observations, not evidence-chain
-records.
-
-## Stop Without Deleting Volumes
-
-```bash
-docker compose \
-  --project-directory network/besu \
-  --env-file network/besu/.env \
-  -f network/besu/docker-compose.yml \
-  -f network/besu/docker-compose.monitoring.yml \
-  down
-```
-
-Do not add `-v`. The command above preserves validator, RPC, Prometheus, and Grafana named
-volumes.
-
-## Known Limitations
-
-- No direct QBFT quorum, validator-vote, or round-success metric was discovered.
-- Inferred health cannot identify which validator caused a stalled round.
-- Five-minute rate panels need enough samples after startup.
-- One-minute stall detection trades fast detection for fewer scrape-timing false positives.
-- Prometheus retention is local and depends on the persistent volume and storage settings.
-- No application-level evidence/access totals or individual transaction inspection exists.
-- This configuration has no external authentication or TLS and is localhost-only.
-
-## Classification
-
-This dashboard is **Integration/Staging Only**. It is not a production monitoring, auditing,
-forensics, or transaction-proof system.
+หยุดด้วย Compose configuration ชุดเดียวกับที่เริ่มและใช้ `down` โดยไม่ใส่ `-v`
+ระบบเป็น integration/staging: ไม่มี direct quorum/vote metrics, host monitoring ครบทุกด้าน หรือ external TLS/authentication

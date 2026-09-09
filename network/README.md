@@ -1,46 +1,12 @@
-# Private Network Guidance
+# เครือข่าย Blockchain
 
-This directory contains private network material for integrating the blockchain
-module with a private EVM network. The current integration/staging stack is
-`network/besu`, which uses Hyperledger Besu `26.7.0`, QBFT, four validators, and
-one separate RPC node.
+เครือข่ายที่ดูแลในโครงการอยู่ที่ [besu/](besu/README.md): Hyperledger Besu `26.7.0`,
+QBFT 4 validators + 1 RPC, Chain ID `20260720`, contract EvidenceRegistryV3
+ตัวอย่าง genesis/static peers เก่าที่ระดับโฟลเดอร์นี้ถูกลบแล้ว เพราะไม่มี consumer ใน workflow ปัจจุบัน
 
-Legacy example files in this directory remain reference-only. Use
-`network/besu/README.md` for the maintained Docker Compose workflow.
+ใช้ [operations](besu/docs/operations.md) สำหรับเริ่ม/หยุดระบบเดิมและขั้นตอนสร้าง chain ใหม่ที่แยกไว้ชัดเจน
+ใช้ [backup-recovery](besu/docs/backup-recovery.md) สำหรับ keys, recovery config และข้อจำกัด chain volumes
 
-## Topology
-
-- Validator nodes for consensus.
-- RPC node dedicated to backend traffic.
-- Persistent volumes for chain data.
-- Monitoring and alerting for peers, block production, disk, and RPC health.
-- Backup procedure for node keys and chain data.
-- Firewall and RPC allowlist.
-- TLS or a reverse proxy for backend-to-RPC traffic.
-
-## Besu QBFT Quick Start
-
-```bash
-cd network/besu
-cp .env.example .env
-scripts/generate-network.sh --force
-scripts/start-network.sh
-```
-
-RPC binds to `127.0.0.1:${RPC_HTTP_PORT}` and exposes only `eth`, `net`, and
-`web3`.
-
-## RPC Namespaces
-
-Expose to backend:
-
-- `eth`
-- `net`
-- `web3`
-
-Do not expose:
-
-- `personal`
-- `admin`
-- `debug`
-- `miner`
+RPC เปิดเฉพาะ `ETH`, `NET`, `WEB3` บน localhost; validators ปิด HTTP/WS RPC
+Prometheus เก็บ metrics ของ 5 nodes และ Grafana ของ Compose หลักอยู่ที่ port `3001`
+Anvil เป็นทางเลือกทดสอบใน environment แยก ไม่ใช่ genesis หรือ consensus ของ Besu ปัจจุบัน
