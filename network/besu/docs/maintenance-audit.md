@@ -174,7 +174,7 @@ references ในตารางอ้าง line numbers ของ commit ต�
 | `test/EvidenceRegistryFuzz.t.sol` | KEEP | — |
 | `test/EvidenceRegistryInvariant.t.sol` | KEEP | — |
 | `test/EvidenceRegistryV3.t.sol` | KEEP | — |
-| `tests/fixtures/EvidenceRegistryV3.json` | KEEP | `.gitignore:41`, `README.md:193`, `README.md:279`, `README.md:280`, `README.md:309` |
+| `artifacts/EvidenceRegistryV3.json` | KEEP | artifact ที่ commit สำหรับ backend runtime, tests และตรวจความตรงกับ Foundry build ใน CI |
 | `tests/proof_fixtures.py` | KEEP | `tests/test_proof_builder.py:15`, `tests/test_proof_models.py:8`, `tests/test_proof_renderer.py:12`, `tests/test_transaction_proof_cli.py:11` |
 | `tests/test_artifacts.py` | KEEP | — |
 | `tests/test_benchmark_analysis.py` | KEEP | — |

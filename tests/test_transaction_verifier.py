@@ -123,7 +123,7 @@ def make_context(operation: str = "evidence") -> tuple[TransactionVerifier, dict
             provider_uri="http://127.0.0.1:8545",
             chain_id=20260720,
             contract_address=CONTRACT,
-            artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+            artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
             confirmation_blocks=1,
         ),
         web3=SimpleNamespace(eth=eth),

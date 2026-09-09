@@ -16,7 +16,7 @@ def test_client_derives_signer_address() -> None:
         chain_id=31337,
         contract_address="0x0000000000000000000000000000000000000001",
         signer_private_key=private_key,
-        artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
     )
 
     client = BlockchainClient(settings)
@@ -71,7 +71,7 @@ def test_client_can_be_constructed_without_signer_for_verification() -> None:
         provider_uri="http://127.0.0.1:8545",
         chain_id=31337,
         contract_address="0x0000000000000000000000000000000000000001",
-        artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
     )
 
     client = BlockchainClient(settings)

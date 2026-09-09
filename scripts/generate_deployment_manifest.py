@@ -28,8 +28,10 @@ def main() -> None:
         default="out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
     )
     parser.add_argument(
+        "--abi-artifact",
         "--abi-fixture",
-        default="tests/fixtures/EvidenceRegistryV3.json",
+        dest="abi_artifact",
+        default="artifacts/EvidenceRegistryV3.json",
     )
     parser.add_argument("--deployment-transaction")
     parser.add_argument("--deployment-block", type=int)
@@ -40,7 +42,7 @@ def main() -> None:
     args = parser.parse_args()
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(tz=UTC).isoformat(),
         "network": args.network,
         "rpc_url": args.rpc_url,
@@ -56,7 +58,7 @@ def main() -> None:
         "writer_role_grant_transaction": args.writer_role_grant_transaction,
         "writer_role_grant_block": args.writer_role_grant_block,
         "artifact_path": args.artifact,
-        "abi_fixture_path": args.abi_fixture,
+        "abi_artifact_path": args.abi_artifact,
         "git_commit": git_output("rev-parse", "HEAD"),
         "git_branch": git_output("branch", "--show-current"),
         "foundry": {

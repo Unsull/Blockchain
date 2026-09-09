@@ -21,7 +21,7 @@ def test_proof_of_authority_settings_install_poa_middleware() -> None:
         provider_uri="http://127.0.0.1:8545",
         chain_id=20_260_720,
         contract_address="0x" + "55" * 20,
-        artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
         proof_of_authority=True,
     )
 

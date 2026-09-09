@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_at": "2026-09-08T06:04:14.100693+00:00",
   "network": "besu-qbft",
   "rpc_url": "http://127.0.0.1:8545",
@@ -15,7 +15,7 @@
   "writer_role_grant_transaction": "0x7a35df6bc7a5492a39c2564ae9e25c984a9966fa98a6a2ff8c10cce8aa563a39",
   "writer_role_grant_block": 13,
   "artifact_path": "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
-  "abi_fixture_path": "tests/fixtures/EvidenceRegistryV3.json",
+  "abi_artifact_path": "artifacts/EvidenceRegistryV3.json",
   "git_commit": "136f9b8323d03907819ac7b1d7700806800aeed1",
   "git_branch": "feature/evidence-registry-v3",
   "foundry": {

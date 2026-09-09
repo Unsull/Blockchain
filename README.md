@@ -15,6 +15,7 @@
 | `scripts/` | export artifact, สร้าง manifest, ตรวจ deployment |
 | `test/`, `tests/` | Solidity และ Python tests |
 | `network/besu/` | Compose, genesis, config nodes, monitoring และ operational scripts |
+| `artifacts/EvidenceRegistryV3.json` | artifact ที่ commit สำหรับ backend runtime และการทดสอบ |
 | `network/besu/deployments/20260720/EvidenceRegistryV3.json` | manifest สาธารณะของ deployment ปัจจุบัน |
 | `lib/` | dependencies แบบ Git submodule; ไม่แก้เอกสาร upstream ให้เป็นเอกสารโครงการ |
 
@@ -82,6 +83,10 @@ Python ใช้ `BlockchainClientSettings` และ inject `TransactionSigner`
 และ artifact `out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json`
 `signer_private_key` ยังมีเพื่อ compatibility แต่ integration ใหม่ควร inject signer
 client ไม่โหลด `.env` เอง; caller ต้องส่ง settings และ secret ที่จำเป็น
+
+Backend ใช้ `blockchain/artifacts/EvidenceRegistryV3.json` เป็นค่าเริ่มต้นของ
+`BLOCKCHAIN_ARTIFACT_PATH` เพื่อไม่ให้ production runtime พึ่งไฟล์ใต้ `tests/`
+CI สร้าง artifact จาก Foundry ใหม่แล้วเปรียบเทียบกับไฟล์ที่ commit ทุกครั้ง
 
 เรียก `client.record_evidence(evidence_ref, evidence_hash, uploader_ref)` และ
 `client.record_access(evidence_ref, officer_ref, access_session_ref, AccessAction.DOWNLOAD, occurred_at)`
@@ -196,7 +201,7 @@ secure storage ที่ควบคุมสิทธิ์ เช่น encryp
 - `network/besu/genesis/qbftConfigFile.json`, `network/besu/nodes/*/config.toml`,
   `network/besu/docker-compose.yml` และ `network/besu/monitoring/` อยู่ใน Git
 - `network/besu/deployments/20260720/EvidenceRegistryV3.json`,
-  `tests/fixtures/EvidenceRegistryV3.json` และ `contracts/EvidenceRegistryV3.sol` อยู่ใน Git
+  `artifacts/EvidenceRegistryV3.json` และ `contracts/EvidenceRegistryV3.sol` อยู่ใน Git
 
 chain state อยู่ใน Docker volumes `evidence-besu-qbft_validator-1-data` ถึง
 `evidence-besu-qbft_validator-4-data` และ `evidence-besu-qbft_rpc-node-data` ซึ่ง Git

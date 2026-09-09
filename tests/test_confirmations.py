@@ -14,7 +14,7 @@ def make_client_like(current_block: int, confirmations: int) -> BlockchainClient
         provider_uri="http://127.0.0.1:8545",
         chain_id=31337,
         contract_address="0x0000000000000000000000000000000000000001",
-        artifact_path=Path("tests/fixtures/EvidenceRegistryV3.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
         confirmation_blocks=confirmations,
         confirmation_poll_interval_seconds=0.001,
         confirmation_timeout_seconds=1,

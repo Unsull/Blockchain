@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_at": "2026-01-01T00:00:00+00:00",
   "network": "example-private-network",
   "rpc_url": "https://rpc.example.invalid",
@@ -15,7 +15,7 @@
   "writer_role_grant_transaction": "0x0000000000000000000000000000000000000000000000000000000000000002",
   "writer_role_grant_block": 2,
   "artifact_path": "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
-  "abi_fixture_path": "tests/fixtures/EvidenceRegistryV3.json",
+  "abi_artifact_path": "artifacts/EvidenceRegistryV3.json",
   "git_commit": "example",
   "git_branch": "main",
   "foundry": {
