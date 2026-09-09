@@ -232,6 +232,63 @@ secrets from global module state.
 Use `.env.example` for production shape and `.env.anvil.example` only as local
 Anvil scaffolding. Neither file contains private keys.
 
+## การจัดการ Secret และ Private Key สำหรับ Blockchain
+
+ระบบแยกหน้าที่ของ key เพื่อจำกัดผลกระทบเมื่อ key ใด key หนึ่งรั่วไหล:
+
+- **Validator Node Key** ใช้ระบุตัวตนและลงนามฉันทามติของ validator แต่ละตัว
+- **RPC Node Key** ใช้เป็น P2P identity ของ RPC node และไม่ได้รับสิทธิ์ validator
+- **Deployer Key** ใช้ส่งธุรกรรม deploy contract เท่านั้น
+- **Contract Admin Key** ใช้ grant/revoke role ของ contract และไม่ควรอยู่ใน backend
+- **Pauser Key** ใช้ pause/unpause contract ตามสิทธิ์ที่ได้รับ
+- **Backend Writer Key** ใช้เฉพาะ `recordEvidence` และ `recordAccess` ใน runtime
+
+Backend อ่านเพียง `BLOCKCHAIN_WRITER_PRIVATE_KEY` จาก `../backend/.env` และไม่ต้อง
+ได้รับ Deployer, Contract Admin, Pauser หรือ Validator key ส่วนงาน deploy/administration
+ใช้ environment ที่ `network/besu/.env` หรือ `.env` ของ repository นี้แยกต่างหาก
+
+ค่าที่เปิดเผยได้ ได้แก่ Chain ID, contract address, deployment block, transaction hash,
+writer/validator address, ABI, genesis, Evidence Ref, officerRef และ accessSessionRef
+ส่วน private key ทุกชนิดห้ามใส่ใน Git, README, `.env.example`, frontend, API response,
+Blockchain Explorer, log, chat หรือ email แบบ plaintext
+
+### ไฟล์ที่ต้องสำรอง
+
+| รายการ | Path | ความสำคัญ | Secret | Git |
+|---|---|---|---|---|
+| Validator 1 identity | `network/besu/keys/validator-1/key` | สูงสุด ใช้กู้ identity เดิม | ใช่ | ignored |
+| Validator 2 identity | `network/besu/keys/validator-2/key` | สูงสุด ใช้กู้ identity เดิม | ใช่ | ignored |
+| Validator 3 identity | `network/besu/keys/validator-3/key` | สูงสุด ใช้กู้ identity เดิม | ใช่ | ignored |
+| Validator 4 identity | `network/besu/keys/validator-4/key` | สูงสุด ใช้กู้ identity เดิม | ใช่ | ignored |
+| RPC node identity | `network/besu/keys/rpc-node/key` | สูง ใช้กู้ P2P identity เดิม | ใช่ | ignored |
+| Deployer/Admin/Pauser/Writer สำหรับงานดูแลระบบ | `.env`, `network/besu/.env` | สูงสุด ใช้ deploy และจัดการ role | ใช่ | ignored |
+| Backend Writer สำหรับ runtime | `../backend/.env` | สูงสุด ใช้เขียนรายการจาก backend | ใช่ | ignored |
+| Generated validator key copies | `network/besu/build/keys/*/key` | สำเนาที่สร้างระหว่าง generate network | ใช่ | ignored |
+
+ให้สำรอง secret เป็น archive ที่เข้ารหัสอย่างน้อย 2 ชุด เก็บคนละตำแหน่งบนสื่อหรือ
+secure storage ที่ควบคุมสิทธิ์ เช่น encrypted external drive ห้ามส่ง password และ archive
+ผ่านช่องทางเดียวกัน และไม่ควรสำรอง generated key copy ซ้ำหากมี canonical key ใต้
+`network/besu/keys/` ครบแล้ว
+
+ไฟล์ recovery ที่ไม่ใช่ secret แต่ต้องรักษาไว้ ได้แก่:
+
+- `network/besu/genesis/genesis.json` และ `network/besu/build/static-nodes.json` เป็น
+  generated recovery config ที่ถูก Git ignore จึงต้องรวมใน backup ของ network
+- `network/besu/genesis/qbftConfigFile.json`, `network/besu/nodes/*/config.toml`,
+  `network/besu/docker-compose.yml` และ `network/besu/monitoring/` อยู่ใน Git
+- `network/besu/deployments/20260720/EvidenceRegistryV3.json`,
+  `tests/fixtures/EvidenceRegistryV3.json` และ `contracts/EvidenceRegistryV3.sol` อยู่ใน Git
+
+chain state อยู่ใน Docker volumes `evidence-besu-qbft_validator-1-data` ถึง
+`evidence-besu-qbft_validator-4-data` และ `evidence-besu-qbft_rpc-node-data` ซึ่ง Git
+ไม่สามารถสำรองแทนได้ การสำรอง production ในอนาคตต้องมีแผน snapshot/restore volumes
+แยกจาก secret backup และต้องทดสอบการกู้คืนจริง
+
+หาก node key สูญหาย จะไม่สามารถสร้าง identity เดิมจาก public address ได้ หาก writer
+key รั่วให้ grant writer ใหม่ก่อน revoke ตัวเก่า และหาก admin/pauser key รั่วให้ย้าย role
+ไป account ใหม่ด้วยขั้นตอนที่ตรวจสอบได้ ห้าม generate key ทดแทนหรือ redeploy อัตโนมัติ
+โดยยังไม่ประเมินผลกระทบ สำหรับ production จริงสามารถพิจารณา Vault/HSM เป็นขั้นถัดไปได้
+
 ## Smoke Tests
 
 After deploying and granting `WRITER_ROLE`, run:
