@@ -334,6 +334,17 @@ class BlockchainClient:
         session = normalize_bytes32(access_session_ref, "access_session_ref")
         return bool(self.contract.functions.accessSessionExists(session).call())
 
+    def transaction_exists(self, tx_hash: str) -> bool:
+        """Return whether the RPC currently knows a submitted transaction hash."""
+
+        self.validate_connection()
+        canonical_hash = normalize_tx_hash(tx_hash)
+        try:
+            self.web3.eth.get_transaction(canonical_hash)
+        except TransactionNotFound:
+            return False
+        return True
+
     def _evidence_recorded_event(self, event: Any) -> EvidenceRecordedEvent:
         self._validate_event_contract(event)
         args = event["args"]
@@ -400,46 +411,50 @@ class BlockchainClient:
     def _submit_contract_transaction(self, function: Any) -> TransactionSubmission:
         signer, nonce_manager = self._require_signer()
         self.validate_connection()
-        try:
-            nonce = nonce_manager.next_nonce()
-            transaction = function.build_transaction(
-                {"from": signer.address, "chainId": self.settings.chain_id, "nonce": nonce}
-            )
-        except NonceError:
-            raise
-        except Exception as exc:
-            raise TransactionBuildError("failed to build transaction") from exc
+        # การเชื่อมต่อ Blockchain: lock ต้องครอบตั้งแต่เลือก nonce จน Besu ตอบรับ
+        # เพื่อไม่ให้ writer หลายคำขอเลือก pending nonce เดียวกันพร้อมกัน
+        with nonce_manager.reserve_nonce() as nonce:
+            try:
+                transaction = function.build_transaction(
+                    {
+                        "from": signer.address,
+                        "chainId": self.settings.chain_id,
+                        "nonce": nonce,
+                    }
+                )
+            except NonceError:
+                raise
+            except Exception as exc:
+                raise TransactionBuildError("failed to build transaction") from exc
 
-        try:
-            gas_estimate = self.web3.eth.estimate_gas(transaction)
-            transaction["gas"] = int(gas_estimate * self.settings.gas_estimate_multiplier)
-            self._apply_fee_settings(transaction)
-        except Exception as exc:
-            nonce_manager.reset()
-            raise TransactionBuildError("failed to estimate gas or apply fees") from exc
+            try:
+                gas_estimate = self.web3.eth.estimate_gas(transaction)
+                transaction["gas"] = int(
+                    gas_estimate * self.settings.gas_estimate_multiplier
+                )
+                self._apply_fee_settings(transaction)
+            except Exception as exc:
+                raise TransactionBuildError("failed to estimate gas or apply fees") from exc
 
-        try:
-            raw_transaction = signer.sign_transaction(transaction)
-        except TransactionSigningError:
-            nonce_manager.reset()
-            raise
-        except Exception as exc:
-            nonce_manager.reset()
-            raise TransactionSigningError("failed to sign transaction") from exc
+            try:
+                raw_transaction = signer.sign_transaction(transaction)
+            except TransactionSigningError:
+                raise
+            except Exception as exc:
+                raise TransactionSigningError("failed to sign transaction") from exc
 
-        canonical_tx_hash = normalize_tx_hash(self.web3.keccak(raw_transaction).hex())
-        try:
-            submitted_hash = self.web3.eth.send_raw_transaction(raw_transaction)
-        except Exception as exc:
-            if self._is_nonce_error(exc):
-                nonce_manager.reset()
-                raise NonceError("nonce conflict while submitting transaction") from exc
-            # การเชื่อมต่อ Blockchain: transport error อาจเกิดหลัง Besu รับธุรกรรมแล้ว
-            # จึงคืน hash ที่คำนวณจาก signed bytes เพื่อ reconcile โดยไม่ส่งซ้ำ
-            raise TransactionSubmissionUncertainError(
-                "transaction submission status is uncertain",
-                canonical_tx_hash,
-            ) from exc
+            canonical_tx_hash = normalize_tx_hash(self.web3.keccak(raw_transaction).hex())
+            try:
+                submitted_hash = self.web3.eth.send_raw_transaction(raw_transaction)
+            except Exception as exc:
+                if self._is_nonce_error(exc):
+                    raise NonceError("nonce conflict while submitting transaction") from exc
+                # การเชื่อมต่อ Blockchain: transport error อาจเกิดหลัง Besu รับธุรกรรมแล้ว
+                # จึงคืน hash ที่คำนวณจาก signed bytes เพื่อ reconcile โดยไม่ส่งซ้ำ
+                raise TransactionSubmissionUncertainError(
+                    "transaction submission status is uncertain",
+                    canonical_tx_hash,
+                ) from exc
 
         returned_hash = normalize_tx_hash(submitted_hash.hex())
         if returned_hash != canonical_tx_hash:

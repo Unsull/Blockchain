@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
+from time import sleep
 
 import pytest
 
@@ -29,20 +31,43 @@ def test_nonce_manager_uses_pending_nonce() -> None:
     assert web3.eth.calls == [("0xabc", "pending")]
 
 
-def test_nonce_manager_allocates_sequential_nonces() -> None:
-    manager = NonceManager(FakeWeb3(7), "0xabc")
+def test_nonce_manager_reconciles_when_pending_nonce_moves_back_after_restart() -> None:
+    web3 = FakeWeb3(7)
+    manager = NonceManager(web3, "0xabc")
 
-    assert [manager.next_nonce(), manager.next_nonce(), manager.next_nonce()] == [7, 8, 9]
+    with manager.reserve_nonce() as nonce:
+        assert nonce == 7
+    web3.eth.pending_nonce = 6
+
+    with manager.reserve_nonce() as nonce:
+        assert nonce == 6
 
 
 def test_nonce_manager_is_thread_safe() -> None:
-    manager = NonceManager(FakeWeb3(3), "0xabc")
+    web3 = FakeWeb3(3)
+    manager = NonceManager(web3, "0xabc")
+    state_lock = Lock()
+    active_reservations = 0
+    maximum_active = 0
+
+    def reserve_and_broadcast(_: int) -> int:
+        nonlocal active_reservations, maximum_active
+        with manager.reserve_nonce() as nonce:
+            with state_lock:
+                active_reservations += 1
+                maximum_active = max(maximum_active, active_reservations)
+            sleep(0.001)
+            web3.eth.pending_nonce += 1
+            with state_lock:
+                active_reservations -= 1
+            return nonce
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        nonces = list(executor.map(lambda _: manager.next_nonce(), range(25)))
+        nonces = list(executor.map(reserve_and_broadcast, range(25)))
 
     assert sorted(nonces) == list(range(3, 28))
     assert len(set(nonces)) == 25
+    assert maximum_active == 1
 
 
 def test_nonce_manager_reset_resyncs_from_pending_state() -> None:

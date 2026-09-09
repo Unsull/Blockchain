@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from pathlib import Path
 from types import MethodType, SimpleNamespace
 from unittest.mock import MagicMock
@@ -12,7 +13,10 @@ from blockchain_client import (
     TransactionSubmission,
 )
 from blockchain_client.client import geth_poa_middleware
-from blockchain_client.exceptions import TransactionSubmissionUncertainError
+from blockchain_client.exceptions import (
+    TransactionSubmissionUncertainError,
+)
+from web3.exceptions import TransactionNotFound
 
 EVIDENCE_REF = "0x" + "11" * 32
 OFFICER_REF = "0x" + "22" * 32
@@ -127,7 +131,10 @@ def test_submission_uncertainty_preserves_locally_derived_tx_hash() -> None:
         address=WRITER,
         sign_transaction=MagicMock(return_value=b"signed transaction"),
     )
-    client.nonce_manager = SimpleNamespace(next_nonce=lambda: 3, reset=MagicMock())
+    client.nonce_manager = SimpleNamespace(
+        reserve_nonce=lambda: nullcontext(3),
+        reset=MagicMock(),
+    )
     client.settings = SimpleNamespace(
         chain_id=20_260_720,
         gas_estimate_multiplier=1.2,
@@ -149,6 +156,19 @@ def test_submission_uncertainty_preserves_locally_derived_tx_hash() -> None:
     assert raised.value.tx_hash == expected_hash
     client.web3.eth.wait_for_transaction_receipt.assert_not_called()
     client.nonce_manager.reset.assert_not_called()
+
+
+def test_transaction_exists_distinguishes_known_and_missing_hashes() -> None:
+    client = object.__new__(BlockchainClient)
+    client.validate_connection = MagicMock()
+    client.web3 = MagicMock()
+    tx_hash = "0x" + "88" * 32
+
+    assert client.transaction_exists(tx_hash)
+
+    client.web3.eth.get_transaction.side_effect = TransactionNotFound(tx_hash)
+    assert not client.transaction_exists(tx_hash)
+    assert client.web3.eth.get_transaction.call_count == 2
 
 
 @pytest.mark.parametrize("action", [0, 1, 2, "VIEW", None])
