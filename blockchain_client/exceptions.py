@@ -41,6 +41,14 @@ class TransactionSubmissionError(BlockchainClientError):
     """Raised when transaction submission fails."""
 
 
+class TransactionSubmissionUncertainError(TransactionSubmissionError):
+    """Raised when a signed transaction may have reached the RPC transaction pool."""
+
+    def __init__(self, message: str, tx_hash: str) -> None:
+        super().__init__(message)
+        self.tx_hash = tx_hash
+
+
 class TransactionTimeoutError(TransactionSubmissionError):
     """Raised while waiting for a transaction receipt times out."""
 

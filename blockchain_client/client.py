@@ -5,7 +5,7 @@ from time import monotonic, sleep
 from typing import Any, Literal, cast
 
 from web3 import Web3
-from web3.exceptions import TimeExhausted
+from web3.exceptions import TimeExhausted, TransactionNotFound
 from web3.middleware.geth_poa import geth_poa_middleware
 
 from blockchain_client.artifacts import load_contract_abi
@@ -23,6 +23,7 @@ from blockchain_client.exceptions import (
     TransactionRevertedError,
     TransactionSigningError,
     TransactionSubmissionError,
+    TransactionSubmissionUncertainError,
     TransactionTimeoutError,
 )
 from blockchain_client.models import (
@@ -31,6 +32,7 @@ from blockchain_client.models import (
     EvidenceAccessEvent,
     EvidenceRecordedEvent,
     TransactionResult,
+    TransactionSubmission,
 )
 from blockchain_client.nonce import NonceManager
 from blockchain_client.references import bytes32_to_hex, normalize_bytes32, normalize_tx_hash
@@ -131,16 +133,13 @@ class BlockchainClient:
     ) -> TransactionResult:
         """Record a V3 access session and its application event time."""
 
-        signer, _ = self._require_signer()
-        if not isinstance(action, AccessAction):
-            raise ValueError("action must be AccessAction.VIEW or AccessAction.DOWNLOAD")
-        if isinstance(occurred_at, bool) or not isinstance(occurred_at, int):
-            raise ValueError("occurred_at must be integer Unix seconds")
-        if occurred_at <= 0 or occurred_at > 2**64 - 1:
-            raise ValueError("occurred_at must fit a non-zero uint64")
-        evidence = normalize_bytes32(evidence_ref, "evidence_ref")
-        officer = normalize_bytes32(officer_ref, "officer_ref")
-        session = normalize_bytes32(access_session_ref, "access_session_ref")
+        evidence, officer, session, expected_args = self._access_arguments(
+            evidence_ref,
+            officer_ref,
+            access_session_ref,
+            action,
+            occurred_at,
+        )
         function = self.contract.functions.recordAccess(
             evidence,
             officer,
@@ -151,14 +150,60 @@ class BlockchainClient:
         return self._send_contract_transaction(
             function,
             "EvidenceAccessRecorded",
-            {
-                "evidenceRef": evidence,
-                "officerRef": officer,
-                "accessSessionRef": session,
-                "action": action.value,
-                "occurredAt": occurred_at,
-                "writer": signer.address,
-            },
+            expected_args,
+        )
+
+    def submit_access(
+        self,
+        evidence_ref: str,
+        officer_ref: str,
+        access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
+    ) -> TransactionSubmission:
+        """Broadcast recordAccess and return before waiting for its receipt."""
+
+        evidence, officer, session, expected_args = self._access_arguments(
+            evidence_ref,
+            officer_ref,
+            access_session_ref,
+            action,
+            occurred_at,
+        )
+        function = self.contract.functions.recordAccess(
+            evidence,
+            officer,
+            session,
+            action.value,
+            occurred_at,
+        )
+        return self._submit_contract_transaction(function)
+
+    def confirm_access(
+        self,
+        tx_hash: str,
+        evidence_ref: str,
+        officer_ref: str,
+        access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
+        *,
+        wait_for_receipt: bool = True,
+    ) -> TransactionResult | None:
+        """Validate a submitted recordAccess receipt and event."""
+
+        _, _, _, expected_args = self._access_arguments(
+            evidence_ref,
+            officer_ref,
+            access_session_ref,
+            action,
+            occurred_at,
+        )
+        return self._confirm_contract_transaction(
+            tx_hash,
+            "EvidenceAccessRecorded",
+            expected_args,
+            wait_for_receipt=wait_for_receipt,
         )
 
     def get_evidence(self, evidence_ref: str) -> dict[str, Any]:
@@ -341,6 +386,18 @@ class BlockchainClient:
         expected_event_name: str,
         expected_args: dict[str, Any],
     ) -> TransactionResult:
+        submission = self._submit_contract_transaction(function)
+        result = self._confirm_contract_transaction(
+            submission.tx_hash,
+            expected_event_name,
+            expected_args,
+            wait_for_receipt=True,
+        )
+        if result is None:
+            raise TransactionTimeoutError("timed out waiting for transaction receipt")
+        return result
+
+    def _submit_contract_transaction(self, function: Any) -> TransactionSubmission:
         signer, nonce_manager = self._require_signer()
         self.validate_connection()
         try:
@@ -370,24 +427,63 @@ class BlockchainClient:
             nonce_manager.reset()
             raise TransactionSigningError("failed to sign transaction") from exc
 
+        canonical_tx_hash = normalize_tx_hash(self.web3.keccak(raw_transaction).hex())
         try:
-            tx_hash = self.web3.eth.send_raw_transaction(raw_transaction)
+            submitted_hash = self.web3.eth.send_raw_transaction(raw_transaction)
         except Exception as exc:
-            nonce_manager.reset()
             if self._is_nonce_error(exc):
+                nonce_manager.reset()
                 raise NonceError("nonce conflict while submitting transaction") from exc
-            raise TransactionSubmissionError("failed to submit signed transaction") from exc
+            # การเชื่อมต่อ Blockchain: transport error อาจเกิดหลัง Besu รับธุรกรรมแล้ว
+            # จึงคืน hash ที่คำนวณจาก signed bytes เพื่อ reconcile โดยไม่ส่งซ้ำ
+            raise TransactionSubmissionUncertainError(
+                "transaction submission status is uncertain",
+                canonical_tx_hash,
+            ) from exc
+
+        returned_hash = normalize_tx_hash(submitted_hash.hex())
+        if returned_hash != canonical_tx_hash:
+            raise TransactionSubmissionUncertainError(
+                "RPC returned an unexpected transaction hash",
+                canonical_tx_hash,
+            )
+        return TransactionSubmission(
+            tx_hash=canonical_tx_hash,
+            contract_address=self.contract.address,
+            chain_id=self.settings.chain_id,
+        )
+
+    def _confirm_contract_transaction(
+        self,
+        tx_hash: str,
+        expected_event_name: str,
+        expected_args: dict[str, Any],
+        *,
+        wait_for_receipt: bool,
+    ) -> TransactionResult | None:
+        self.validate_connection()
+        canonical_tx_hash = normalize_tx_hash(tx_hash)
 
         try:
-            receipt = cast(
-                Any,
-                self.web3.eth.wait_for_transaction_receipt(
-                    tx_hash,
-                    timeout=self.settings.request_timeout_seconds,
-                ),
-            )
+            if wait_for_receipt:
+                receipt = cast(
+                    Any,
+                    self.web3.eth.wait_for_transaction_receipt(
+                        canonical_tx_hash,
+                        timeout=self.settings.request_timeout_seconds,
+                    ),
+                )
+            else:
+                receipt = cast(
+                    Any,
+                    self.web3.eth.get_transaction_receipt(canonical_tx_hash),
+                )
         except TimeExhausted as exc:
             raise TransactionTimeoutError("timed out waiting for transaction receipt") from exc
+        except TransactionNotFound:
+            if wait_for_receipt:
+                raise
+            return None
 
         if receipt["status"] != 1:
             raise TransactionRevertedError("transaction receipt status is 0")
@@ -397,10 +493,15 @@ class BlockchainClient:
             expected_event_name,
             expected_args,
         )
-        confirmations = self._wait_for_confirmations(receipt["blockNumber"])
+        if wait_for_receipt:
+            confirmations = self._wait_for_confirmations(receipt["blockNumber"])
+        else:
+            confirmations = max(self.web3.eth.block_number - receipt["blockNumber"], 0)
+            if confirmations < self.settings.confirmation_blocks:
+                return None
         block = cast(Any, self.web3.eth.get_block(receipt["blockNumber"]))
         return TransactionResult(
-            tx_hash=receipt["transactionHash"].hex(),
+            tx_hash=normalize_tx_hash(receipt["transactionHash"].hex()),
             block_number=receipt["blockNumber"],
             block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),
             contract_address=self.contract.address,
@@ -408,6 +509,33 @@ class BlockchainClient:
             confirmations=confirmations,
             event=event,
         )
+
+    def _access_arguments(
+        self,
+        evidence_ref: str,
+        officer_ref: str,
+        access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
+    ) -> tuple[str, str, str, dict[str, Any]]:
+        signer, _ = self._require_signer()
+        if not isinstance(action, AccessAction):
+            raise ValueError("action must be AccessAction.VIEW or AccessAction.DOWNLOAD")
+        if isinstance(occurred_at, bool) or not isinstance(occurred_at, int):
+            raise ValueError("occurred_at must be integer Unix seconds")
+        if occurred_at <= 0 or occurred_at > 2**64 - 1:
+            raise ValueError("occurred_at must fit a non-zero uint64")
+        evidence = normalize_bytes32(evidence_ref, "evidence_ref")
+        officer = normalize_bytes32(officer_ref, "officer_ref")
+        session = normalize_bytes32(access_session_ref, "access_session_ref")
+        return evidence, officer, session, {
+            "evidenceRef": evidence,
+            "officerRef": officer,
+            "accessSessionRef": session,
+            "action": action.value,
+            "occurredAt": occurred_at,
+            "writer": signer.address,
+        }
 
     def _require_signer(self) -> tuple[TransactionSigner, NonceManager]:
         if self.signer is None or self.nonce_manager is None:

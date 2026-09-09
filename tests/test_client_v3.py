@@ -5,8 +5,14 @@ from unittest.mock import MagicMock
 import pytest
 from hexbytes import HexBytes
 
-from blockchain_client import AccessAction, BlockchainClient, BlockchainClientSettings
+from blockchain_client import (
+    AccessAction,
+    BlockchainClient,
+    BlockchainClientSettings,
+    TransactionSubmission,
+)
 from blockchain_client.client import geth_poa_middleware
+from blockchain_client.exceptions import TransactionSubmissionUncertainError
 
 EVIDENCE_REF = "0x" + "11" * 32
 OFFICER_REF = "0x" + "22" * 32
@@ -42,6 +48,14 @@ def writable_client() -> tuple[BlockchainClient, MagicMock]:
         functions=SimpleNamespace(recordAccess=record_access)
     )
     client._send_contract_transaction = MagicMock(return_value="result")
+    client._submit_contract_transaction = MagicMock(
+        return_value=TransactionSubmission(
+            tx_hash="0x" + "55" * 32,
+            contract_address="0x" + "66" * 20,
+            chain_id=20_260_720,
+        )
+    )
+    client._confirm_contract_transaction = MagicMock(return_value="confirmed")
     return client, record_access
 
 
@@ -68,6 +82,73 @@ def test_record_access_serializes_v3_action_and_occurred_at(action: AccessAction
     expected = client._send_contract_transaction.call_args.args[2]
     assert expected["action"] == action.value
     assert expected["occurredAt"] == OCCURRED_AT
+
+
+def test_submit_access_returns_before_receipt_wait() -> None:
+    client, contract_call = writable_client()
+
+    result = client.submit_access(
+        EVIDENCE_REF,
+        OFFICER_REF,
+        SESSION_REF,
+        AccessAction.VIEW,
+        OCCURRED_AT,
+    )
+
+    assert result.tx_hash == "0x" + "55" * 32
+    client._submit_contract_transaction.assert_called_once()
+    client._confirm_contract_transaction.assert_not_called()
+    contract_call.assert_called_once()
+
+
+def test_confirm_access_supports_nonblocking_receipt_poll() -> None:
+    client, _ = writable_client()
+
+    result = client.confirm_access(
+        "0x" + "55" * 32,
+        EVIDENCE_REF,
+        OFFICER_REF,
+        SESSION_REF,
+        AccessAction.VIEW,
+        OCCURRED_AT,
+        wait_for_receipt=False,
+    )
+
+    assert result == "confirmed"
+    assert client._confirm_contract_transaction.call_args.kwargs == {
+        "wait_for_receipt": False,
+    }
+
+
+def test_submission_uncertainty_preserves_locally_derived_tx_hash() -> None:
+    client = object.__new__(BlockchainClient)
+    expected_hash = "0x" + "77" * 32
+    client.signer = SimpleNamespace(
+        address=WRITER,
+        sign_transaction=MagicMock(return_value=b"signed transaction"),
+    )
+    client.nonce_manager = SimpleNamespace(next_nonce=lambda: 3, reset=MagicMock())
+    client.settings = SimpleNamespace(
+        chain_id=20_260_720,
+        gas_estimate_multiplier=1.2,
+    )
+    client.contract = SimpleNamespace(address="0x" + "66" * 20)
+    client.validate_connection = MagicMock()
+    client._apply_fee_settings = MagicMock()
+    client.web3 = MagicMock()
+    client.web3.keccak.return_value = HexBytes(expected_hash)
+    client.web3.eth.estimate_gas.return_value = 100_000
+    client.web3.eth.send_raw_transaction.side_effect = ConnectionError("lost response")
+    function = SimpleNamespace(
+        build_transaction=MagicMock(return_value={"from": WRITER})
+    )
+
+    with pytest.raises(TransactionSubmissionUncertainError) as raised:
+        client._submit_contract_transaction(function)
+
+    assert raised.value.tx_hash == expected_hash
+    client.web3.eth.wait_for_transaction_receipt.assert_not_called()
+    client.nonce_manager.reset.assert_not_called()
 
 
 @pytest.mark.parametrize("action", [0, 1, 2, "VIEW", None])

@@ -27,6 +27,15 @@ class TransactionResult:
 
 
 @dataclass(frozen=True)
+class TransactionSubmission:
+    """Transaction metadata available immediately after broadcast."""
+
+    tx_hash: str
+    contract_address: str
+    chain_id: int
+
+
+@dataclass(frozen=True)
 class BlockchainHealth:
     """Connection and deployment health details."""
 

@@ -8,6 +8,7 @@ from blockchain_client.models import (
     EvidenceAccessEvent,
     EvidenceRecordedEvent,
     TransactionResult,
+    TransactionSubmission,
     VerifiedAccess,
     VerifiedEvidence,
 )
@@ -34,6 +35,7 @@ __all__ = [
     "derive_evidence_ref",
     "LocalPrivateKeySigner",
     "TransactionResult",
+    "TransactionSubmission",
     "TransactionProofBuilder",
     "TransactionSigner",
     "VerifiedAccess",
