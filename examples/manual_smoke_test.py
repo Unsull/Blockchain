@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
 from blockchain_client import (
+    AccessAction,
     BlockchainClient,
     BlockchainClientSettings,
     derive_access_session_ref,
@@ -24,7 +26,7 @@ def main() -> None:
         contract_address=contract_address,
         signer_private_key=writer_private_key,
         artifact_path=Path(
-            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistry.sol/EvidenceRegistry.json")
+            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json")
         ),
         request_timeout_seconds=30,
         confirmation_blocks=int(os.getenv("MIN_CONFIRMATIONS", "0")),
@@ -52,6 +54,8 @@ def main() -> None:
         evidence_ref=evidence_ref,
         officer_ref=officer_ref,
         access_session_ref=access_session_ref,
+        action=AccessAction.DOWNLOAD,
+        occurred_at=int(datetime.now(tz=UTC).timestamp()),
     )
     print("\nAccess transaction:")
     print(access_tx)

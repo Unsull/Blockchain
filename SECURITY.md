@@ -1,46 +1,36 @@
-# Security Policy
+# ความปลอดภัยของโมดูล Blockchain
 
-## Supported Versions
+นโยบายนี้ครอบคลุม package `0.1.x` และ EvidenceRegistryV3 ของโครงการ
+แจ้งช่องโหว่เป็นการส่วนตัวกับผู้ดูแล repository; อย่าเผยแพร่ private keys, credentials หรือข้อมูลโจมตีใน public issue
 
-Security fixes target the current `0.1.x` blockchain module.
+## แยกหน้าที่ key
 
-## Reporting A Vulnerability
+Validator 4 keys และ RPC key เป็น node identities; ห้ามนำไปใช้ลงนามธุรกรรมของแอป
+Deployer ใช้ deploy, Admin ใช้ grant/revoke, Pauser ใช้ pause/unpause และ Writer ใช้บันทึกรายการ
+constructor ให้ admin เป็น Pauser ด้วย; การให้ Pauser ใหม่ไม่ลบสิทธิ์เดิม
+Backend runtime ต้องมี Blockchain secret เฉพาะ `BLOCKCHAIN_WRITER_PRIVATE_KEY`
+เก็บ admin แยกจาก backend; งานลงนามใหม่ควร inject `TransactionSigner`
 
-Report vulnerabilities privately to the repository maintainers. Do not open a
-public issue with exploit details, private keys, RPC URLs, or chain credentials.
+## Secret และ backup
 
-## Secret Handling
+`.env.example`/`.env.anvil.example` ต้องมีเพียง placeholder หรือ public config
+ห้าม commit keys, `.env`, backup archive/keyfile หรือส่งค่าเหล่านี้ไป frontend/API/log/proof/chat
+Git ignore ไม่สามารถลบ secret ที่เคย commit ได้ ต้องตรวจ tracked files, staging และ history แยก
+CI ใช้ ephemeral keys ลงไฟล์สิทธิ์ `0600` และลบด้วย `if: always()`
+ดู [inventory และ restore](network/besu/docs/backup-recovery.md); เก็บ archive และ recovery key แยกกัน
 
-Never commit deployer, admin, pauser, or writer private keys. Use environment
-variables or a secret manager for deployment automation. The Python client signs
-raw transactions locally and should run only in a controlled backend execution
-environment.
+## RPC และ monitoring
 
-Prefer injecting a signer implementation instead of storing a private key in
-application settings. `signer_private_key` is kept only for migration
-compatibility and should not be used for new production integrations.
+Compose หลัก bind RPC และ Grafana เฉพาะ localhost; validator ไม่มี HTTP/WS RPC
+RPC เปิด `ETH`, `NET`, `WEB3`; ไม่เปิด account unlock, admin, debug หรือ consensus management API
+ปิด discovery และใช้ static peers; ไม่เปิด wildcard CORS
+ค่า Grafana จาก environment ใช้ตอนตั้งต้น; ตรวจบัญชีใน persistent volume แยกจาก `.env`
+ก่อนใช้ต่าง host ต้องออกแบบ firewall, TLS, authentication และ secret storage ให้เหมาะสม
 
-## RPC Exposure
+## เมื่อ key สูญหายหรือรั่ว
 
-Expose only the RPC namespaces required by backend integration: `eth`, `net`,
-and `web3`. Do not expose `personal`, `admin`, `debug`, `trace`, `txpool`,
-`qbft`, `perm`, or `miner` to backend systems or external networks.
-
-The Besu QBFT stack binds RPC to `127.0.0.1` on the Docker host. Validators have
-RPC disabled and use generated static peers with discovery disabled.
-
-## Signer Security
-
-Use separate accounts for deployer, admin, pauser, backend writer, and
-validator/operator duties. Validator keys must not be reused as deployer,
-admin, pauser, or writer keys. Store admin keys offline when possible. Rotate
-writer keys by granting a new writer and revoking the old writer.
-
-Deployment automation should generate a manifest and verify bytecode, chain ID,
-contract address, and role assignments before enabling backend writes.
-
-## Admin Key Recommendations
-
-Use a multisig or offline process for `DEFAULT_ADMIN_ROLE` in production-like
-environments. The admin account should not submit routine evidence or access
-transactions.
+กู้ node key เดิมจาก backup; สร้าง identity เดิมจาก public address ไม่ได้
+Writer รั่ว: ใช้ Admin ให้ role แก่ Writer ใหม่แล้วถอน role เดิม พร้อมปรับ runtime อย่างมีแผน
+Admin/Pauser รั่ว: ประเมิน role state และย้ายสิทธิ์ผ่านบัญชีที่ยังเชื่อถือได้
+ขั้นตอนเหล่านี้สร้างธุรกรรมจริง ต้องบันทึกผลและตรวจ role ภายหลัง ไม่ทำอัตโนมัติระหว่าง audit
+ระบบนี้ยังเป็น integration/staging; backup ของ secrets ไม่ใช่หลักฐานว่า chain recovery ผ่านแล้ว

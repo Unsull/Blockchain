@@ -4,11 +4,13 @@ import os
 import shutil
 import subprocess
 from collections.abc import Callable
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
 
 from blockchain_client import (
+    AccessAction,
     BlockchainClient,
     BlockchainClientSettings,
     derive_access_session_ref,
@@ -36,7 +38,7 @@ def make_client(private_key: str) -> BlockchainClient:
         contract_address=os.environ["CONTRACT_ADDRESS"],
         signer_private_key=private_key,
         artifact_path=Path(
-            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistry.sol/EvidenceRegistry.json")
+            os.getenv("ARTIFACT_PATH", "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json")
         ),
         request_timeout_seconds=30,
         confirmation_blocks=0,
@@ -105,7 +107,14 @@ def main() -> None:
         ),
     )
 
-    writer.record_access(evidence_ref, officer_ref, access_session_ref)
+    occurred_at = int(datetime.now(tz=UTC).timestamp())
+    writer.record_access(
+        evidence_ref,
+        officer_ref,
+        access_session_ref,
+        AccessAction.DOWNLOAD,
+        occurred_at,
+    )
     print("[SETUP] recorded initial access session")
 
     expect_submission_failure(
@@ -114,6 +123,8 @@ def main() -> None:
             evidence_ref,
             derive_actor_ref(uuid4()),
             access_session_ref,
+            AccessAction.DOWNLOAD,
+            occurred_at,
         ),
     )
 
@@ -148,6 +159,8 @@ def main() -> None:
                 evidence_ref,
                 derive_actor_ref(uuid4()),
                 derive_access_session_ref(uuid4()),
+                AccessAction.DOWNLOAD,
+                occurred_at,
             ),
         )
     finally:

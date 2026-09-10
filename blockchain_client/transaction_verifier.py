@@ -8,7 +8,7 @@ from web3.exceptions import TransactionNotFound
 
 from blockchain_client.client import BlockchainClient
 from blockchain_client.exceptions import TransactionVerificationError
-from blockchain_client.models import VerifiedAccess, VerifiedEvidence
+from blockchain_client.models import AccessAction, VerifiedAccess, VerifiedEvidence
 from blockchain_client.references import bytes32_to_hex, normalize_tx_hash
 
 
@@ -78,22 +78,38 @@ class TransactionVerifier:
         evidence_ref = bytes32_to_hex(params["evidenceRef"])
         officer_ref = bytes32_to_hex(params["officerRef"])
         session_ref = bytes32_to_hex(params["accessSessionRef"])
+        try:
+            action = AccessAction(int(params["action"]))
+        except (TypeError, ValueError) as exc:
+            raise TransactionVerificationError("invalid access action") from exc
+        occurred_at = int(params["occurredAt"])
         if (
             bytes32_to_hex(event["evidenceRef"]) != evidence_ref
             or bytes32_to_hex(event["officerRef"]) != officer_ref
             or bytes32_to_hex(event["accessSessionRef"]) != session_ref
+            or int(event["action"]) != action.value
+            or int(event["occurredAt"]) != occurred_at
         ):
             raise TransactionVerificationError("event/input mismatch")
         self._assert_writer(tx, event)
 
         state = self.client.get_access_by_session(session_ref)
-        if state["evidence_ref"] != evidence_ref or state["officer_ref"] != officer_ref:
+        if (
+            state["evidence_ref"] != evidence_ref
+            or state["officer_ref"] != officer_ref
+            or state["action"] != action
+            or state["occurred_at"] != occurred_at
+            or state["recorded_at"] != int(event["recordedAt"])
+        ):
             raise TransactionVerificationError("state/event mismatch")
 
         return VerifiedAccess(
             evidence_ref=evidence_ref,
             officer_ref=officer_ref,
             access_session_ref=session_ref,
+            action=action,
+            occurred_at=occurred_at,
+            recorded_at=int(event["recordedAt"]),
             tx_hash=normalized,
             block_number=receipt["blockNumber"],
             block_timestamp=datetime.fromtimestamp(block["timestamp"], tz=UTC),

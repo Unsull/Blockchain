@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-interface IEvidenceRegistry {
+interface IEvidenceRegistryV3 {
+    enum AccessAction {
+        VIEW,
+        DOWNLOAD
+    }
+
     struct EvidenceRecord {
-        // Blockchain integration: evidenceHash replaces the legacy staticHash anchor.
         bytes32 evidenceHash;
-        // Blockchain integration: uploaderRef links the anchor to its custody source.
         bytes32 uploaderRef;
         uint64 recordedAt;
         address writer;
@@ -15,18 +18,19 @@ interface IEvidenceRegistry {
     struct AccessRecord {
         bytes32 evidenceRef;
         bytes32 officerRef;
+        AccessAction action;
+        uint64 occurredAt;
         uint64 recordedAt;
         address writer;
     }
 
     error InvalidAdminAddress();
     error InvalidEvidenceRef();
-
-    // Blockchain integration: replaces the legacy InvalidStaticHash validation.
     error InvalidEvidenceHash();
     error InvalidUploaderRef();
     error InvalidOfficerRef();
     error InvalidAccessSessionRef();
+    error InvalidOccurredAt();
     error EvidenceAlreadyExists(bytes32 evidenceRef);
     error EvidenceNotFound(bytes32 evidenceRef);
     error AccessSessionAlreadyExists(bytes32 accessSessionRef);
@@ -44,14 +48,21 @@ interface IEvidenceRegistry {
         bytes32 indexed evidenceRef,
         bytes32 indexed officerRef,
         bytes32 indexed accessSessionRef,
+        AccessAction action,
+        uint64 occurredAt,
         uint64 recordedAt,
         address writer
     );
 
     function recordEvidence(bytes32 evidenceRef, bytes32 evidenceHash, bytes32 uploaderRef) external;
 
-    function recordAccess(bytes32 evidenceRef, bytes32 officerRef, bytes32 accessSessionRef)
-        external;
+    function recordAccess(
+        bytes32 evidenceRef,
+        bytes32 officerRef,
+        bytes32 accessSessionRef,
+        AccessAction action,
+        uint64 occurredAt
+    ) external;
 
     function getEvidence(bytes32 evidenceRef)
         external
@@ -67,7 +78,14 @@ interface IEvidenceRegistry {
     function getAccessBySession(bytes32 accessSessionRef)
         external
         view
-        returns (bytes32 evidenceRef, bytes32 officerRef, uint64 recordedAt, address writer);
+        returns (
+            bytes32 evidenceRef,
+            bytes32 officerRef,
+            AccessAction action,
+            uint64 occurredAt,
+            uint64 recordedAt,
+            address writer
+        );
 
     function evidenceExists(bytes32 evidenceRef) external view returns (bool);
 

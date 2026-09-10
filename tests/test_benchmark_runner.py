@@ -9,7 +9,7 @@ from blockchain_client.benchmark_runner import (
     BenchmarkRunner,
     synthetic_bytes32,
 )
-from blockchain_client.models import TransactionResult
+from blockchain_client.models import AccessAction, TransactionResult
 
 
 class FakeEth:
@@ -32,7 +32,7 @@ class FakeClient:
     def __init__(self) -> None:
         self.web3 = FakeWeb3()
         self.calls: list[tuple[str, str, str]] = []
-        self.access_calls: list[tuple[str, str, str]] = []
+        self.access_calls: list[tuple[str, str, str, AccessAction, int]] = []
         self.fail_sequences: set[int] = set()
         self._lock = Lock()
         self._sequence = 0
@@ -88,12 +88,14 @@ class FakeClient:
         evidence_ref: str,
         officer_ref: str,
         access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
     ) -> TransactionResult:
         with self._lock:
             self._sequence += 1
             sequence = self._sequence
             self.access_calls.append(
-                (evidence_ref, officer_ref, access_session_ref)
+                (evidence_ref, officer_ref, access_session_ref, action, occurred_at)
             )
 
         tx_hash = "0x" + f"{sequence:064x}"
@@ -294,6 +296,8 @@ class ConcurrentFakeClient(FakeClient):
         evidence_ref: str,
         officer_ref: str,
         access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
     ) -> TransactionResult:
         with self._lock:
             self.active_calls += 1
@@ -307,6 +311,8 @@ class ConcurrentFakeClient(FakeClient):
                 evidence_ref,
                 officer_ref,
                 access_session_ref,
+                action,
+                occurred_at,
             )
         finally:
             with self._lock:

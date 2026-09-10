@@ -8,6 +8,7 @@ from typing import Any, cast
 from eth_typing import HexStr
 
 from blockchain_client.client import BlockchainClient
+from blockchain_client.models import AccessAction
 from blockchain_client.proof_models import (
     SCHEMA_VERSION,
     AccessTransactionProof,
@@ -61,6 +62,8 @@ class TransactionProofBuilder:
             evidence_ref=bytes32_to_hex(params["evidenceRef"]),
             officer_ref=bytes32_to_hex(params["officerRef"]),
             access_session_ref=bytes32_to_hex(params["accessSessionRef"]),
+            action=AccessAction(int(params["action"])),
+            occurred_at=int(params["occurredAt"]),
             writer_address=verified.writer,
             checks=self._successful_checks(),
         )

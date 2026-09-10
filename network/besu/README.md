@@ -1,62 +1,44 @@
-# Besu QBFT Private Network
+# เครือข่าย Besu QBFT
 
-This directory defines an integration/staging private EVM network using
-Hyperledger Besu `26.7.0`, QBFT consensus, Docker Compose, four validators, and
-one separate RPC node.
+ใช้ Hyperledger Besu `26.7.0`, Chain ID `20260720`, QBFT 4 validators + 1 RPC
+contract ปัจจุบันคือ EvidenceRegistryV3 ดู manifest ใน `deployments/20260720/EvidenceRegistryV3.json`
+Compose รวม Prometheus และ Grafana พร้อม named volumes สำหรับ chain และ monitoring
 
-The Docker image is pinned as `hyperledger/besu:26.7.0`; do not use `latest`.
+## เริ่มระบบเดิม
 
-## Quick Start
-
-```bash
-cd network/besu
-cp .env.example .env
-scripts/generate-network.sh --force
-python scripts/fund-genesis.py --genesis genesis/genesis.json \
-  --address 0xYOUR_DEPLOYER_ADDRESS --address 0xYOUR_ADMIN_ADDRESS
-scripts/start-network.sh
-```
-
-RPC is available only on localhost:
-
-```text
-http://127.0.0.1:8545
-```
-
-## Topology
-
-```text
-validator-1  validator-2  validator-3  validator-4
-     |            |            |            |
-     +------------+------------+------------+
-                  private QBFT P2P network
-                              |
-                           rpc-node
-                              |
-                backend / blockchain_client
-```
-
-Validators have RPC disabled. The RPC node exposes `ETH`, `NET`, and `WEB3`
-only.
-
-`static-nodes.json` uses validator IPv4 addresses reserved by Compose IPAM.
-Changing node IPs requires rendering it again from the existing public keys;
-it does not require new validator keys or a new QBFT validator set.
-
-## Commands
+จาก root ของ blockchain ใน Bash environment ที่มี Python dependencies:
 
 ```bash
-docker compose config
-python scripts/health-check.py --expected-chain-id 20260720
-python scripts/smoke-test.py
-python scripts/failure-test.py
-scripts/deploy-registry.sh
+bash network/besu/scripts/start-network.sh
+python network/besu/scripts/health-check.py --expected-chain-id 20260720
+docker compose --project-directory network/besu ps
 ```
 
-See `docs/operations.md` for full workflows.
+สคริปต์โหลด `network/besu/.env` และใช้ genesis/keys เดิม
+อย่ารัน generate/reset หรือคัดลอก `.env.example` ทับระบบที่มีข้อมูลอยู่
+RPC หลักอยู่ `http://127.0.0.1:8545`; Grafana อยู่ `http://127.0.0.1:3001`
+Prometheus ไม่ publish host port ใน Compose หลัก; ดู monitoring guide เมื่อต้องเปิด port สำหรับงานวิเคราะห์
 
-## Known Limitations
+## โครงสร้าง
 
-This stack is not a production claim. Complete backup drills, monitoring review,
-security review, host deployment validation, and external signer validation
-before production use.
+```text
+backend / blockchain_client -> rpc-node -> validator-1..4 (QBFT)
+                               metrics ของทั้ง 5 nodes -> Prometheus -> Grafana
+```
+
+Validator ปิด HTTP/WS RPC; RPC เปิดเฉพาะ `ETH`, `NET`, `WEB3`
+Compose mount `keys/<node>/key`, `genesis/genesis.json`, `build/static-nodes.json` และ `nodes/<node>/config.toml`
+static peers เป็น validator IPs ที่กำหนดใน Compose IPAM; แก้ IP ไม่จำเป็นต้องสร้าง keys ใหม่
+chain state อยู่ใน named volumes ไม่ใช่ `nodes/*/data/.gitkeep`
+
+## คู่มือ
+
+- [Operations: run/deploy/test](docs/operations.md)
+- [Architecture](docs/architecture.md)
+- [Monitoring และ Grafana](docs/monitoring-dashboard.md)
+- [Secrets backup และ recovery](docs/backup-recovery.md)
+- [Failure tests](docs/failure-testing.md)
+- [Security](docs/security.md)
+- [Benchmark](benchmarks/README.md) และ [transaction proofs](proofs/README.md)
+
+ระบบนี้ใช้สำหรับ integration/staging; ต้องทดสอบ recovery, host security และ signer ก่อนอ้างความพร้อม production

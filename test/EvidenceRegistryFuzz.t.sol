@@ -2,16 +2,16 @@
 pragma solidity 0.8.24;
 
 import { Test } from "forge-std/Test.sol";
-import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
-import { IEvidenceRegistry } from "../contracts/interfaces/IEvidenceRegistry.sol";
+import { EvidenceRegistryV3 } from "../contracts/EvidenceRegistryV3.sol";
+import { IEvidenceRegistryV3 } from "../contracts/interfaces/IEvidenceRegistryV3.sol";
 
 contract EvidenceRegistryFuzzTest is Test {
-    EvidenceRegistry internal registry;
+    EvidenceRegistryV3 internal registry;
     address internal admin = address(0xA11CE);
     address internal writer = address(0xB0B);
 
     function setUp() public {
-        registry = new EvidenceRegistry(admin);
+        registry = new EvidenceRegistryV3(admin);
         bytes32 writerRole = registry.WRITER_ROLE();
         vm.prank(admin);
         registry.grantRole(writerRole, writer);
@@ -50,10 +50,16 @@ contract EvidenceRegistryFuzzTest is Test {
 
         vm.startPrank(writer);
         registry.recordEvidence(evidenceRef, evidenceHash, uploaderRef);
-        registry.recordAccess(evidenceRef, officerRef, accessSessionRef);
+        registry.recordAccess(
+            evidenceRef,
+            officerRef,
+            accessSessionRef,
+            IEvidenceRegistryV3.AccessAction.DOWNLOAD,
+            1_700_000_000
+        );
         vm.stopPrank();
 
-        (bytes32 storedEvidence, bytes32 storedOfficer,, address storedWriter) =
+        (bytes32 storedEvidence, bytes32 storedOfficer,,,, address storedWriter) =
             registry.getAccessBySession(accessSessionRef);
         assertEq(storedEvidence, evidenceRef);
         assertEq(storedOfficer, officerRef);
@@ -64,13 +70,13 @@ contract EvidenceRegistryFuzzTest is Test {
         vm.assume(nonZero != bytes32(0));
 
         vm.startPrank(writer);
-        vm.expectRevert(IEvidenceRegistry.InvalidEvidenceRef.selector);
+        vm.expectRevert(IEvidenceRegistryV3.InvalidEvidenceRef.selector);
         registry.recordEvidence(bytes32(0), nonZero, nonZero);
 
-        vm.expectRevert(IEvidenceRegistry.InvalidEvidenceHash.selector);
+        vm.expectRevert(IEvidenceRegistryV3.InvalidEvidenceHash.selector);
         registry.recordEvidence(nonZero, bytes32(0), nonZero);
 
-        vm.expectRevert(IEvidenceRegistry.InvalidUploaderRef.selector);
+        vm.expectRevert(IEvidenceRegistryV3.InvalidUploaderRef.selector);
         registry.recordEvidence(nonZero, nonZero, bytes32(0));
         vm.stopPrank();
     }

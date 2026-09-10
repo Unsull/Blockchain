@@ -2,10 +2,10 @@
 pragma solidity 0.8.24;
 
 import { Test } from "forge-std/Test.sol";
-import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { EvidenceRegistryV3 } from "../contracts/EvidenceRegistryV3.sol";
 
 contract EvidenceRegistryAccessControlTest is Test {
-    EvidenceRegistry internal registry;
+    EvidenceRegistryV3 internal registry;
     address internal admin = address(0xA11CE);
     address internal writer = address(0xB0B);
     address internal pauser = address(0xCAFE);
@@ -14,7 +14,7 @@ contract EvidenceRegistryAccessControlTest is Test {
     bytes32 internal uploaderRef = keccak256("uploader");
 
     function setUp() public {
-        registry = new EvidenceRegistry(admin);
+        registry = new EvidenceRegistryV3(admin);
     }
 
     function testAdminCanGrantAndRevokeWriter() public {

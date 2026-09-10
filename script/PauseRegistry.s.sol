@@ -2,11 +2,11 @@
 pragma solidity 0.8.24;
 
 import { Script } from "forge-std/Script.sol";
-import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { EvidenceRegistryV3 } from "../contracts/EvidenceRegistryV3.sol";
 
 contract PauseRegistry is Script {
     function run() external {
-        EvidenceRegistry registry = EvidenceRegistry(vm.envAddress("CONTRACT_ADDRESS"));
+        EvidenceRegistryV3 registry = EvidenceRegistryV3(vm.envAddress("CONTRACT_ADDRESS"));
         uint256 pauserPrivateKey = vm.envUint("PAUSER_PRIVATE_KEY");
         uint256 expectedChainId = vm.envUint("CHAIN_ID");
 

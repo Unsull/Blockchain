@@ -10,7 +10,7 @@ from hexbytes import HexBytes
 
 from blockchain_client.config import BlockchainClientSettings
 from blockchain_client.exceptions import TransactionVerificationError
-from blockchain_client.models import VerifiedAccess, VerifiedEvidence
+from blockchain_client.models import AccessAction, VerifiedAccess, VerifiedEvidence
 from blockchain_client.proof_builder import TransactionProofBuilder
 from tests.proof_fixtures import (
     CONTRACT,
@@ -54,6 +54,9 @@ class FakeVerifier:
             EVIDENCE_REF,
             OFFICER_REF,
             SESSION_REF,
+            AccessAction.VIEW,
+            1_700_000_000,
+            1_700_000_030,
             TX_HASH,
             100,
             datetime(2026, 8, 6, tzinfo=UTC),
@@ -72,6 +75,8 @@ def make_client(operation: str) -> Any:
     else:
         params["officerRef"] = HexBytes(OFFICER_REF)
         params["accessSessionRef"] = HexBytes(SESSION_REF)
+        params["action"] = AccessAction.VIEW.value
+        params["occurredAt"] = 1_700_000_000
     tx = {"from": WRITER, "to": CONTRACT, "input": "0x1234"}
     receipt = {
         "status": 1,
@@ -94,7 +99,7 @@ def make_client(operation: str) -> Any:
             provider_uri="http://127.0.0.1:8545",
             chain_id=20260720,
             contract_address=CONTRACT,
-            artifact_path=Path("tests/fixtures/EvidenceRegistry.json"),
+            artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
         ),
         web3=SimpleNamespace(eth=eth),
         contract=SimpleNamespace(
@@ -126,6 +131,8 @@ def test_build_access_proof_collects_verified_references() -> None:
     assert proof.function_name == "recordAccess"
     assert proof.officer_ref == OFFICER_REF
     assert proof.access_session_ref == SESSION_REF
+    assert proof.action == AccessAction.VIEW
+    assert proof.occurred_at == 1_700_000_000
 
 
 def test_builder_propagates_verifier_failure_before_loading_metadata() -> None:

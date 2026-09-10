@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-08T06:04:14.100693+00:00",
+  "network": "besu-qbft",
+  "rpc_url": "http://127.0.0.1:8545",
+  "chain_id": 20260720,
+  "contract_name": "EvidenceRegistryV3",
+  "contract_version": "V3",
+  "contract_address": "0xf9e0ca8d6cfa419bd79276775f441816c2cb2403",
+  "deployment_transaction": "0x3462b599e1babfe4bd2c43c3f1fe7b8d0eaa044aa7d537dcd1aed9ae63713b27",
+  "deployment_block": 12,
+  "deployer_address": "0xE357a079DCa825D7Fc5B44ee9635966b5D308ACa",
+  "admin_address": "0xF85F3180aC4515c6bFA787011b3000b80B110440",
+  "writer_address": "0x8c641c984b9d548aF42a53421e4852364d48cF02",
+  "writer_role_grant_transaction": "0x7a35df6bc7a5492a39c2564ae9e25c984a9966fa98a6a2ff8c10cce8aa563a39",
+  "writer_role_grant_block": 13,
+  "artifact_path": "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
+  "abi_artifact_path": "artifacts/EvidenceRegistryV3.json",
+  "git_commit": "136f9b8323d03907819ac7b1d7700806800aeed1",
+  "git_branch": "feature/evidence-registry-v3",
+  "foundry": {
+    "forge_version": "forge Version: 1.7.1\nCommit SHA: 4072e48705af9d93e3c0f6e29e93b5e9a40caed8\nBuild Timestamp: 2026-05-08T07:54:39.315067700Z (1778226879)\nBuild Profile: dist"
+  }
+}

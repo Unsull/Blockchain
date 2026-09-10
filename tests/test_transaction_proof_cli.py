@@ -33,7 +33,7 @@ def verification_args(module: ModuleType) -> object:
             "--contract-address",
             "0x" + "44" * 20,
             "--artifact-path",
-            "tests/fixtures/EvidenceRegistry.json",
+            "artifacts/EvidenceRegistryV3.json",
         ]
     )
 

@@ -18,6 +18,10 @@ jobs:
           version: v1.7.1
       - run: forge fmt --check
       - run: forge build
+      - name: Verify committed runtime artifact
+        run: |
+          python3 scripts/export_artifact.py --output /tmp/EvidenceRegistryV3.json
+          cmp artifacts/EvidenceRegistryV3.json /tmp/EvidenceRegistryV3.json
       - run: forge test -vvv
       - run: forge test --gas-report
 
@@ -81,8 +85,11 @@ jobs:
         run: docker compose --project-directory network/besu --env-file network/besu/.env.example config
       - name: Generate CI accounts
         run: |
-          python - <<'PY' > /tmp/besu-ci-env
+          python - <<'PY'
+          from pathlib import Path
+
           from eth_account import Account
+
           labels = {
               "DEPLOYER": Account.create(),
               "ADMIN": Account.create(),
@@ -90,10 +97,14 @@ jobs:
               "PAUSER": Account.create(),
               "UNAUTHORIZED": Account.create(),
           }
+          lines = []
           for label, account in labels.items():
               private_key = account.key.hex().removeprefix("0x")
-              print(f"{label}_PRIVATE_KEY=0x{private_key}")
-              print(f"{label}_ADDRESS={account.address}")
+              lines.append(f"{label}_PRIVATE_KEY=0x{private_key}")
+              lines.append(f"{label}_ADDRESS={account.address}")
+          output = Path("/tmp/besu-ci-env")
+          output.write_text("\n".join(lines) + "\n", encoding="ascii")
+          output.chmod(0o600)
           PY
       - name: Generate network
         run: |
@@ -181,3 +192,6 @@ jobs:
         with:
           name: besu-network-debug
           path: network/besu/logs
+      - name: Remove ephemeral CI secrets
+        if: always()
+        run: rm -f /tmp/besu-ci-env

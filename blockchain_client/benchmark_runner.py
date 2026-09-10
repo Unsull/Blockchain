@@ -12,7 +12,7 @@ from blockchain_client.benchmark_models import (
     BenchmarkScenario,
     BenchmarkTransactionResult,
 )
-from blockchain_client.models import TransactionResult
+from blockchain_client.models import AccessAction, TransactionResult
 
 
 class BenchmarkClient(Protocol):
@@ -33,6 +33,8 @@ class BenchmarkClient(Protocol):
         evidence_ref: str,
         officer_ref: str,
         access_session_ref: str,
+        action: AccessAction,
+        occurred_at: int,
     ) -> TransactionResult:
         """Record one synthetic access transaction."""
 
@@ -277,4 +279,6 @@ class BenchmarkRunner:
             evidence_ref,
             officer_ref,
             access_session_ref,
+            AccessAction.DOWNLOAD,
+            int(utc_now().timestamp()),
         )

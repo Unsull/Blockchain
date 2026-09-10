@@ -8,7 +8,7 @@ from hexbytes import HexBytes
 
 from blockchain_client.client import BlockchainClient
 from blockchain_client.exceptions import EventValidationError, ReferenceValidationError
-from blockchain_client.models import EvidenceAccessEvent, EvidenceRecordedEvent
+from blockchain_client.models import AccessAction, EvidenceAccessEvent, EvidenceRecordedEvent
 
 CONTRACT = "0x" + "44" * 20
 OTHER_CONTRACT = "0x" + "45" * 20
@@ -64,6 +64,8 @@ def access_log(
             "evidenceRef": HexBytes(EVIDENCE_REF),
             "officerRef": HexBytes(OFFICER_REF),
             "accessSessionRef": HexBytes(session_ref),
+            "action": AccessAction.DOWNLOAD.value,
+            "occurredAt": 1_700_000_050,
             "recordedAt": 1_700_000_100,
             "writer": WRITER,
         },
@@ -150,6 +152,8 @@ def test_list_access_events_are_sorted_by_chain_position() -> None:
         for event in events
     ] == [(11, 1, 4), (11, 2, 1), (12, 0, 0)]
     assert all(event.access_session_ref == SESSION_REF for event in events)
+    assert all(event.action == AccessAction.DOWNLOAD for event in events)
+    assert all(event.occurred_at == 1_700_000_050 for event in events)
 
 
 def test_get_access_event_by_session_found() -> None:

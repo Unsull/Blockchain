@@ -10,14 +10,14 @@ def main() -> None:
     parser.add_argument(
         "--artifact",
         type=Path,
-        default=Path("out/EvidenceRegistry.sol/EvidenceRegistry.json"),
+        default=Path("out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json"),
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
     artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
     exported = {
-        "contractName": artifact.get("contractName", "EvidenceRegistry"),
+        "contractName": artifact.get("contractName", args.artifact.stem),
         "abi": artifact["abi"],
         "bytecode": artifact.get("bytecode", {}),
         "deployedBytecode": artifact.get("deployedBytecode", {}),

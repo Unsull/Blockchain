@@ -34,7 +34,10 @@ network/besu/monitoring/grafana/data/
 **/nodekey
 **/nodekey.pub
 
-# Local Besu deployment and reset metadata
-network/besu/deployments/
+# เก็บ V3 deployment manifest ซึ่งเป็นข้อมูลสาธารณะ แต่ไม่เก็บไฟล์ runtime อื่น
+network/besu/deployments/*
+!network/besu/deployments/*/
+network/besu/deployments/*/*
+!network/besu/deployments/*/EvidenceRegistryV3.json
 network/besu/backups/
 network/besu/benchmarks/results/

@@ -2,10 +2,10 @@
 pragma solidity 0.8.24;
 
 import { Script } from "forge-std/Script.sol";
-import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { EvidenceRegistryV3 } from "../contracts/EvidenceRegistryV3.sol";
 
-contract DeployEvidenceRegistry is Script {
-    function run() external returns (EvidenceRegistry registry) {
+contract DeployEvidenceRegistryV3 is Script {
+    function run() external returns (EvidenceRegistryV3 registry) {
         address admin = vm.envAddress("REGISTRY_ADMIN_ADDRESS");
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         uint256 expectedChainId = vm.envUint("CHAIN_ID");
@@ -14,7 +14,7 @@ contract DeployEvidenceRegistry is Script {
         require(admin != address(0), "Admin cannot be zero address");
 
         vm.startBroadcast(deployerPrivateKey);
-        registry = new EvidenceRegistry(admin);
+        registry = new EvidenceRegistryV3(admin);
         vm.stopBroadcast();
     }
 }

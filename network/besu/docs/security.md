@@ -1,19 +1,20 @@
-# Besu Network Security
+# ความปลอดภัย Besu network
 
-- RPC is bound to localhost on the Docker host.
-- Validators do not expose HTTP or WS RPC.
-- RPC node exposes only `ETH`, `NET`, and `WEB3`.
-- `ADMIN`, `DEBUG`, `TRACE`, `TXPOOL`, `QBFT`, `PERM`, account management, and
-  unlocked account APIs are not exposed.
-- Discovery is disabled; peers come from generated static nodes.
-- No wildcard CORS is configured.
-- Node keys, validator keys, `.env`, runtime data, logs, and generated keystores
-  are ignored by Git.
-- Validator keys must not be reused as deployer, admin, pauser, or writer keys.
-- Admin accounts should not be routine writers.
-- Use a reverse proxy with TLS and firewall allowlists for staging hosts.
-- Use a secret manager or injected environment for deployer/admin/writer keys.
-- Rotate writer keys by granting a new writer and revoking the old writer.
-- Keep `hyperledger/besu` pinned to an exact version, and test upgrades in a new
-  chain or full staging clone.
-- Encrypt backups containing validator keys and deployment manifests.
+config ปัจจุบัน bind RPC ที่ localhost, ปิด validator HTTP/WS RPC และเปิด `ETH`, `NET`, `WEB3` ที่ RPC node
+ปิด discovery, ใช้ static peers, ไม่เปิด wildcard CORS หรือ unlocked account API
+keys/config ถูก mount read-only; data อยู่ Docker named volumes
+
+node keys, `.env`, generated build, logs และข้อมูล runtime ถูก Git ignore ตาม `.gitignore`
+ห้ามใช้ validator/RPC identity เป็น Deployer/Admin/Pauser/Writer
+backend มีเฉพาะ Writer secret; admin ควบคุม role และไม่ใช้เขียนหลักฐานประจำวัน
+เก็บ secret ผ่าน controlled environment/secret manager ไม่ผ่าน command-line argument หรือ shell tracing
+
+Grafana หลักอยู่ localhost:3001; ตรวจ `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD`
+และบัญชีจริงใน Grafana volume แยกกัน ห้าม commit password
+monitoring override เปิด Prometheus localhost:9090 และเพิ่ม Grafana localhost:3000
+ไม่ใช่ค่า port หลักของ stack
+
+สำรอง canonical keys, environment และ recovery config แบบเข้ารหัสตาม [คู่มือ](backup-recovery.md)
+manifest/ABI เป็น public metadata แต่ archive ที่รวม secrets ต้องจำกัดสิทธิ์
+ก่อนเปิดใช้ต่าง host ต้องออกแบบ TLS/firewall/authentication และทดสอบ upgrade ด้วย environment แยก
+ดู [นโยบายโมดูล](../../../SECURITY.md)

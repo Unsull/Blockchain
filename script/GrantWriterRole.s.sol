@@ -2,11 +2,11 @@
 pragma solidity 0.8.24;
 
 import { Script } from "forge-std/Script.sol";
-import { EvidenceRegistry } from "../contracts/EvidenceRegistry.sol";
+import { EvidenceRegistryV3 } from "../contracts/EvidenceRegistryV3.sol";
 
 contract GrantWriterRole is Script {
     function run() external {
-        EvidenceRegistry registry = EvidenceRegistry(vm.envAddress("CONTRACT_ADDRESS"));
+        EvidenceRegistryV3 registry = EvidenceRegistryV3(vm.envAddress("CONTRACT_ADDRESS"));
         address writer = vm.envAddress("WRITER_ADDRESS");
         uint256 adminPrivateKey = vm.envUint("ADMIN_PRIVATE_KEY");
         uint256 expectedChainId = vm.envUint("CHAIN_ID");

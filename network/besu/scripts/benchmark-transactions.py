@@ -38,7 +38,7 @@ DEFAULT_OUTPUT_DIRECTORY = Path(
 )
 
 DEFAULT_ARTIFACT_PATH = Path(
-    "out/EvidenceRegistry.sol/EvidenceRegistry.json"
+    "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json"
 )
 
 

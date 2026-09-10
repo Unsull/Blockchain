@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-01-01T00:00:00+00:00",
+  "network": "example-private-network",
+  "rpc_url": "https://rpc.example.invalid",
+  "chain_id": 31337,
+  "contract_name": "EvidenceRegistryV3",
+  "contract_version": "V3",
+  "contract_address": "0x0000000000000000000000000000000000000001",
+  "deployment_transaction": "0x0000000000000000000000000000000000000000000000000000000000000001",
+  "deployment_block": 1,
+  "deployer_address": "0x0000000000000000000000000000000000000002",
+  "admin_address": "0x0000000000000000000000000000000000000003",
+  "writer_address": "0x0000000000000000000000000000000000000004",
+  "writer_role_grant_transaction": "0x0000000000000000000000000000000000000000000000000000000000000002",
+  "writer_role_grant_block": 2,
+  "artifact_path": "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json",
+  "abi_artifact_path": "artifacts/EvidenceRegistryV3.json",
+  "git_commit": "example",
+  "git_branch": "main",
+  "foundry": {
+    "forge_version": "forge Version: 1.7.1"
+  }
+}

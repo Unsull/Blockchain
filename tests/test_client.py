@@ -5,7 +5,7 @@ import pytest
 from eth_account import Account
 from hexbytes import HexBytes
 
-from blockchain_client import BlockchainClient, BlockchainClientSettings
+from blockchain_client import AccessAction, BlockchainClient, BlockchainClientSettings
 from blockchain_client.exceptions import SigningAccountRequiredError
 
 
@@ -16,7 +16,7 @@ def test_client_derives_signer_address() -> None:
         chain_id=31337,
         contract_address="0x0000000000000000000000000000000000000001",
         signer_private_key=private_key,
-        artifact_path=Path("tests/fixtures/EvidenceRegistry.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
     )
 
     client = BlockchainClient(settings)
@@ -71,7 +71,7 @@ def test_client_can_be_constructed_without_signer_for_verification() -> None:
         provider_uri="http://127.0.0.1:8545",
         chain_id=31337,
         contract_address="0x0000000000000000000000000000000000000001",
-        artifact_path=Path("tests/fixtures/EvidenceRegistry.json"),
+        artifact_path=Path("artifacts/EvidenceRegistryV3.json"),
     )
 
     client = BlockchainClient(settings)
@@ -92,4 +92,10 @@ def test_write_methods_require_signer() -> None:
             "0x" + "33" * 32,
         )
     with pytest.raises(SigningAccountRequiredError):
-        client.record_access("0x" + "11" * 32, "0x" + "22" * 32, "0x" + "33" * 32)
+        client.record_access(
+            "0x" + "11" * 32,
+            "0x" + "22" * 32,
+            "0x" + "33" * 32,
+            AccessAction.VIEW,
+            1_700_000_000,
+        )
