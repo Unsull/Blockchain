@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from time import monotonic, sleep
 from typing import Any, Literal, cast
 
+from eth_typing import HexStr
 from web3 import Web3
 from web3.exceptions import TimeExhausted, TransactionNotFound
 from web3.middleware.geth_poa import geth_poa_middleware
@@ -22,7 +23,6 @@ from blockchain_client.exceptions import (
     TransactionConfirmationTimeoutError,
     TransactionRevertedError,
     TransactionSigningError,
-    TransactionSubmissionError,
     TransactionSubmissionUncertainError,
     TransactionTimeoutError,
 )
@@ -338,7 +338,7 @@ class BlockchainClient:
         """Return whether the RPC currently knows a submitted transaction hash."""
 
         self.validate_connection()
-        canonical_hash = normalize_tx_hash(tx_hash)
+        canonical_hash = cast(HexStr, normalize_tx_hash(tx_hash))
         try:
             self.web3.eth.get_transaction(canonical_hash)
         except TransactionNotFound:
@@ -477,7 +477,7 @@ class BlockchainClient:
         wait_for_receipt: bool,
     ) -> TransactionResult | None:
         self.validate_connection()
-        canonical_tx_hash = normalize_tx_hash(tx_hash)
+        canonical_tx_hash = cast(HexStr, normalize_tx_hash(tx_hash))
 
         try:
             if wait_for_receipt:

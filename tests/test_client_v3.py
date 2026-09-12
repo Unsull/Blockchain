@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from hexbytes import HexBytes
+from web3.exceptions import TransactionNotFound
 
 from blockchain_client import (
     AccessAction,
@@ -16,7 +17,6 @@ from blockchain_client.client import geth_poa_middleware
 from blockchain_client.exceptions import (
     TransactionSubmissionUncertainError,
 )
-from web3.exceptions import TransactionNotFound
 
 EVIDENCE_REF = "0x" + "11" * 32
 OFFICER_REF = "0x" + "22" * 32

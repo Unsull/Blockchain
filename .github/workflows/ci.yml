@@ -16,12 +16,98 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.7.1
+      - name: Report Solidity build environment
+        run: |
+          forge --version
+          python3 --version
+          git --version
+          solc --version || true
+          git ls-files --eol \
+            contracts/EvidenceRegistryV3.sol \
+            artifacts/EvidenceRegistryV3.json \
+            scripts/export_artifact.py
       - run: forge fmt --check
       - run: forge build
       - name: Verify committed runtime artifact
+        id: artifact-verification
         run: |
           python3 scripts/export_artifact.py --output /tmp/EvidenceRegistryV3.json
+
+          echo "=== Artifact SHA-256 ==="
+          sha256sum artifacts/EvidenceRegistryV3.json
+          sha256sum /tmp/EvidenceRegistryV3.json
+
+          echo "=== Artifact file size ==="
+          wc -c artifacts/EvidenceRegistryV3.json
+          wc -c /tmp/EvidenceRegistryV3.json
+
+          echo "=== Structured artifact comparison ==="
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          tracked = json.loads(Path("artifacts/EvidenceRegistryV3.json").read_text())
+          generated = json.loads(Path("/tmp/EvidenceRegistryV3.json").read_text())
+
+
+          def summary(value):
+              if isinstance(value, str):
+                  encoded = value.encode()
+              else:
+                  encoded = json.dumps(
+                      value,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                  ).encode()
+              return len(encoded), hashlib.sha256(encoded).hexdigest()
+
+
+          print(f"top-level keys same: {set(tracked) == set(generated)}")
+          print(f"tracked-only keys: {sorted(set(tracked) - set(generated))}")
+          print(f"generated-only keys: {sorted(set(generated) - set(tracked))}")
+          for field in ("contractName", "abi", "bytecode", "deployedBytecode"):
+              tracked_value = tracked.get(field)
+              generated_value = generated.get(field)
+              print(f"{field} same: {tracked_value == generated_value}")
+              tracked_length, tracked_hash = summary(tracked_value)
+              generated_length, generated_hash = summary(generated_value)
+              print(f"{field} tracked length={tracked_length} sha256={tracked_hash}")
+              print(f"{field} generated length={generated_length} sha256={generated_hash}")
+
+              if field in ("bytecode", "deployedBytecode"):
+                  for child in ("object", "sourceMap", "linkReferences"):
+                      tracked_child = (tracked_value or {}).get(child)
+                      generated_child = (generated_value or {}).get(child)
+                      tracked_length, tracked_hash = summary(tracked_child)
+                      generated_length, generated_hash = summary(generated_child)
+                      print(f"{field}.{child} same: {tracked_child == generated_child}")
+                      print(
+                          f"{field}.{child} tracked length={tracked_length} "
+                          f"sha256={tracked_hash}"
+                      )
+                      print(
+                          f"{field}.{child} generated length={generated_length} "
+                          f"sha256={generated_hash}"
+                      )
+          PY
+
+          echo "=== Limited artifact diff ==="
+          diff -u \
+            artifacts/EvidenceRegistryV3.json \
+            /tmp/EvidenceRegistryV3.json \
+            | head -200 || true
+
           cmp artifacts/EvidenceRegistryV3.json /tmp/EvidenceRegistryV3.json
+      - name: Upload Solidity artifact diagnostics
+        if: ${{ failure() && steps.artifact-verification.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: EvidenceRegistryV3-ci-generated-${{ github.sha }}
+          path: |
+            /tmp/EvidenceRegistryV3.json
+            out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json
+          if-no-files-found: warn
       - run: forge test -vvv
       - run: forge test --gas-report
 
