@@ -1,0 +1,20 @@
+{
+  "scenarios": [
+    {
+      "name": "evidence-c100",
+      "operation": "recordEvidence",
+      "transaction_count": 100,
+      "concurrency": 100,
+      "confirmations": 1,
+      "repetitions": 3
+    },
+    {
+      "name": "access-c100",
+      "operation": "recordAccess",
+      "transaction_count": 100,
+      "concurrency": 100,
+      "confirmations": 1,
+      "repetitions": 3
+    }
+  ]
+}

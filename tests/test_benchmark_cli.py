@@ -2,6 +2,7 @@
 
 import importlib.util
 from argparse import Namespace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any
@@ -83,6 +84,8 @@ def make_args(
         prometheus_url=(
             "http://127.0.0.1:9090"
         ),
+        allowed_down_instances=[],
+        prometheus_step_seconds=15,
     )
 
 
@@ -256,6 +259,27 @@ def test_main_returns_one_on_invalid_configuration(
     )
 
 
+def test_parser_accepts_allowed_down_instance() -> None:
+    module = load_script()
+    args = module.build_parser().parse_args(
+        ["--allowed-down-instance", "validator-4:9545"]
+    )
+
+    assert args.allowed_down_instances == ["validator-4:9545"]
+    metadata = module.build_experiment_metadata(
+        tuple(args.allowed_down_instances)
+    )
+    assert metadata.experiment_condition == "3/4_validators_active"
+    assert metadata.active_validators == 3
+
+
+def test_experiment_metadata_rejects_rpc_as_allowed_down() -> None:
+    module = load_script()
+
+    with pytest.raises(ValueError, match="known validator"):
+        module.build_experiment_metadata(("rpc-node:9545",))
+
+
 def test_execute_runs_selected_plans(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -323,6 +347,8 @@ def test_run_plan_captures_network_before_and_after(
 
     before_snapshot = object()
     after_snapshot = object()
+    time_series = (object(),)
+    started_at = datetime(2026, 8, 14, 12, 0, tzinfo=UTC)
 
     class FakeClient:
         def validate_connection(
@@ -365,7 +391,10 @@ def test_run_plan_captures_network_before_and_after(
         def validate_snapshot(
             self,
             snapshot: object,
+            **kwargs: object,
         ) -> None:
+            assert kwargs["expected_instances"] == module.EXPECTED_BESU_INSTANCES
+            assert kwargs["allowed_down_instances"] == ()
             if snapshot is before_snapshot:
                 events.append(
                     "validate-before"
@@ -378,6 +407,19 @@ def test_run_plan_captures_network_before_and_after(
                 raise AssertionError(
                     "unexpected snapshot"
                 )
+
+        def capture_range(
+            self,
+            start: datetime,
+            end: datetime,
+            *,
+            step_seconds: int,
+        ) -> tuple[object, ...]:
+            assert start == started_at
+            assert end == started_at + timedelta(seconds=30)
+            assert step_seconds == 15
+            events.append("capture-range")
+            return time_series
 
     class FakeRunner:
         def __init__(
@@ -407,7 +449,9 @@ def test_run_plan_captures_network_before_and_after(
             )
 
             return SimpleNamespace(
-                run_id="run-001"
+                run_id="run-001",
+                started_at=started_at,
+                finished_at=started_at + timedelta(seconds=30),
             )
 
     summary = SimpleNamespace(
@@ -464,7 +508,7 @@ def test_run_plan_captures_network_before_and_after(
     monkeypatch.setattr(
         module,
         "export_run_bundle",
-        lambda result, summary_value, directory: application_paths,
+        lambda result, summary_value, directory, experiment: application_paths,
     )
 
     def fake_write_network_observation(
@@ -492,6 +536,23 @@ def test_run_plan_captures_network_before_and_after(
         fake_write_network_observation,
     )
 
+    def fake_write_prometheus_timeseries(
+        run_id: str,
+        samples: tuple[object, ...],
+        directory: Path,
+    ) -> Path:
+        assert run_id == "run-001"
+        assert samples is time_series
+        assert directory == tmp_path
+        events.append("timeseries-export")
+        return tmp_path / "metrics-timeseries-run-001.csv"
+
+    monkeypatch.setattr(
+        module,
+        "write_prometheus_timeseries",
+        fake_write_prometheus_timeseries,
+    )
+
     paths = module.run_plan(
         make_plan(),
         make_args(tmp_path),
@@ -504,10 +565,12 @@ def test_run_plan_captures_network_before_and_after(
         "benchmark-run",
         "capture-after",
         "validate-after",
+        "capture-range",
         "network-export",
+        "timeseries-export",
     ]
 
-    assert len(paths) == 4
+    assert len(paths) == 5
 
     assert paths == [
         tmp_path / "run-run-001.json",
@@ -517,6 +580,8 @@ def test_run_plan_captures_network_before_and_after(
         / "summary-run-001.json",
         tmp_path
         / "network-run-001.json",
+        tmp_path
+        / "metrics-timeseries-run-001.csv",
     ]
 
     assert (
@@ -546,3 +611,4 @@ def test_run_plan_captures_network_before_and_after(
         observation.after
         is after_snapshot
     )
+    assert observation.experiment.experiment_condition == "4/4_validators_active"

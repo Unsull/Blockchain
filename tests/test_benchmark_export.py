@@ -7,6 +7,7 @@ from pathlib import Path
 
 from blockchain_client.benchmark_export import export_run_bundle
 from blockchain_client.benchmark_models import (
+    BenchmarkExperimentMetadata,
     BenchmarkRunResult,
     BenchmarkScenario,
     BenchmarkTransactionResult,
@@ -159,3 +160,29 @@ def test_export_transactions_csv_contains_one_row_per_transaction(
     assert rows[0]["sequence"] == "1"
     assert rows[0]["scenario_name"] == "evidence-c1"
     assert rows[1]["sequence"] == "2"
+
+
+def test_export_run_and_summary_include_experiment_metadata(
+    tmp_path: Path,
+) -> None:
+    run = make_run()
+    experiment = BenchmarkExperimentMetadata(
+        experiment_condition="3/4_validators_active",
+        active_validators=3,
+        allowed_down_instances=("validator-4:9545",),
+    )
+
+    paths = export_run_bundle(
+        run,
+        summarize_run(run),
+        tmp_path,
+        experiment=experiment,
+    )
+
+    run_payload = json.loads(paths.run_json.read_text(encoding="utf-8"))
+    summary_payload = json.loads(
+        paths.summary_json.read_text(encoding="utf-8")
+    )
+
+    assert run_payload["experiment"]["active_validators"] == 3
+    assert summary_payload["experiment"] == run_payload["experiment"]
