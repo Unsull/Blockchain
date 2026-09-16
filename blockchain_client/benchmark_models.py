@@ -8,6 +8,15 @@ BenchmarkOperation = Literal["recordEvidence", "recordAccess"]
 
 
 @dataclass(frozen=True)
+class BenchmarkExperimentMetadata:
+    """Machine-readable validator condition attached to one benchmark run."""
+
+    experiment_condition: str
+    active_validators: int
+    allowed_down_instances: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class BenchmarkScenario:
     """Configuration for one benchmark scenario."""
 

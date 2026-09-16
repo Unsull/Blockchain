@@ -30,6 +30,9 @@ class AggregateBenchmarkResult:
     mean_p95_seconds: float | None
     mean_p99_seconds: float | None
     mean_gas: float | None
+    experiment_condition: str | None = None
+    active_validators: int | None = None
+    allowed_down_instances: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,8 @@ class NetworkObservation:
     run_id: str
     before: NetworkSnapshot
     after: NetworkSnapshot
+    experiment_condition: str | None = None
+    allowed_down_instances: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -67,6 +72,8 @@ class AggregateNetworkHealth:
     after_node_up_samples: int
     expected_target_count: int
     all_expected_targets_up: bool
+    all_targets_match_condition: bool
+    experiment_conditions: tuple[str, ...]
     all_nodes_synchronized: bool
     peer_sample_count: int
     minimum_peer_count: float | None
@@ -127,6 +134,7 @@ def load_network_observations(
                 run_id=_required_str(payload, "run_id"),
                 before=_parse_network_snapshot(payload, "before"),
                 after=_parse_network_snapshot(payload, "after"),
+                **_parse_network_experiment(payload),
             )
         )
     return observations
@@ -163,10 +171,23 @@ def analyze_network_observations(
         and all(sample.value == 1.0 for sample in snapshot.node_up)
         for snapshot in snapshots
     )
+    all_condition_matched = bool(items) and all(
+        _snapshot_matches_condition(
+            snapshot,
+            allowed_down_instances=item.allowed_down_instances,
+            expected_target_count=expected_target_count,
+        )
+        for item in items
+        for snapshot in (item.before, item.after)
+    )
     all_synchronized = bool(items) and all(
-        len(snapshot.sync_status) == expected_target_count
-        and all(sample.value == 1.0 for sample in snapshot.sync_status)
-        for snapshot in snapshots
+        _snapshot_active_nodes_synchronized(
+            snapshot,
+            allowed_down_instances=item.allowed_down_instances,
+            expected_target_count=expected_target_count,
+        )
+        for item in items
+        for snapshot in (item.before, item.after)
     )
     peers = [
         sample.value
@@ -193,6 +214,16 @@ def analyze_network_observations(
         after_node_up_samples=after_up,
         expected_target_count=expected_target_count,
         all_expected_targets_up=all_up,
+        all_targets_match_condition=all_condition_matched,
+        experiment_conditions=tuple(
+            sorted(
+                {
+                    item.experiment_condition
+                    for item in items
+                    if item.experiment_condition is not None
+                }
+            )
+        ),
         all_nodes_synchronized=all_synchronized,
         peer_sample_count=len(peers),
         minimum_peer_count=min(peers) if peers else None,
@@ -237,6 +268,14 @@ def aggregate_summaries(
         concurrency = _consistent_int(
             ordered_runs,
             "concurrency",
+            scenario_name,
+        )
+        (
+            experiment_condition,
+            active_validators,
+            allowed_down_instances,
+        ) = _consistent_experiment(
+            ordered_runs,
             scenario_name,
         )
 
@@ -305,6 +344,9 @@ def aggregate_summaries(
                 mean_p95_seconds=_optional_mean(p95_values),
                 mean_p99_seconds=_optional_mean(p99_values),
                 mean_gas=_optional_mean(gas_values),
+                experiment_condition=experiment_condition,
+                active_validators=active_validators,
+                allowed_down_instances=allowed_down_instances,
             )
         )
 
@@ -378,6 +420,11 @@ def write_aggregate_csv(
 ) -> None:
     rows = [asdict(result) for result in results]
 
+    for row in rows:
+        row["allowed_down_instances"] = ";".join(
+            row["allowed_down_instances"]
+        )
+
     if not rows:
         raise ValueError("cannot export empty aggregate result")
 
@@ -426,6 +473,28 @@ def write_markdown_report(
     ]
 
     measured_runs = sum(item.repetitions for item in result_list)
+    conditions = sorted(
+        {
+            item.experiment_condition
+            for item in result_list
+            if item.experiment_condition is not None
+        }
+    )
+    concurrency_values = sorted(
+        {item.concurrency for item in result_list}
+    )
+    transactions_per_repetition = sorted(
+        {
+            item.submitted // item.repetitions
+            for item in result_list
+            if item.repetitions > 0
+        }
+    )
+    condition_text = (
+        ", ".join(conditions)
+        if conditions
+        else "not recorded in legacy artifacts"
+    )
     lines = [
         "# Benchmark Performance Evaluation",
         "",
@@ -450,26 +519,29 @@ def write_markdown_report(
             "nodes and one RPC node in a local, single-host Docker integration "
             "environment. Prometheus (15-second scrape interval), Grafana, "
             "and the Python benchmark client provided monitoring and workload "
-            "execution. Tested concurrency values were 1, 2, 5, and 10, with "
-            "20 measured transactions per repetition, three repetitions per "
-            "scenario, and one confirmation."
+            f"execution. Declared condition(s): {condition_text}. Tested "
+            "concurrency values: "
+            f"{', '.join(str(value) for value in concurrency_values)}. "
+            "Measured transactions per repetition: "
+            f"{', '.join(str(value) for value in transactions_per_repetition)}."
         ),
         "",
         "## Aggregate Results",
         "",
         (
-            "| Operation | Concurrency | Mean TPS | TPS StdDev | "
+            "| Condition | Operation | Concurrency | Mean TPS | TPS StdDev | "
             "Mean P50 (s) | Mean P95 (s) | Mean P99 (s) | "
             "Mean Gas | Failure Rate |"
         ),
         (
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|"
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"
         ),
     ]
 
     for result in result_list:
         lines.append(
             "| "
+            f"{result.experiment_condition or 'legacy/unspecified'} | "
             f"{result.operation} | "
             f"{result.concurrency} | "
             f"{result.mean_throughput_tps:.4f} | "
@@ -508,8 +580,8 @@ def write_markdown_report(
                 "Increasing concurrency increased completion throughput but "
                 "did not materially reduce individual transaction completion "
                 "latency, whose mean P95 values remained near 10 seconds. No "
-                "clear throughput saturation was demonstrated at concurrency "
-                "10 or below. The highest observed throughput is a result "
+                "clear throughput saturation was demonstrated within the "
+                "tested concurrency values. The highest observed throughput is a result "
                 "within the tested matrix, not evidence of a system capacity "
                 "ceiling or production performance."
             ),
@@ -563,7 +635,8 @@ def write_markdown_report(
             ),
             "",
             (
-                "Concurrency levels were limited to 1, 2, 5, and 10. "
+                "Concurrency levels were limited to "
+                f"{', '.join(str(value) for value in concurrency_values)}. "
                 "Because the experiment did not continue until a clear "
                 "throughput plateau or failure boundary was reached, the "
                 "highest observed throughput is not a capacity limit."
@@ -573,8 +646,8 @@ def write_markdown_report(
                 "The local single-host environment does not reproduce WAN "
                 "latency, packet loss, multi-host storage behavior, "
                 "production authentication, TLS overhead, load balancing, "
-                "validator or node failures, or network partitions. "
-                "Concurrency above 10 was not tested."
+                "unplanned validator or node failures, or network partitions "
+                "beyond the declared experimental condition."
             ),
             "",
             (
@@ -721,15 +794,24 @@ def _network_health_lines(
             "network-health context is unavailable."
         ]
 
-    availability = (
-        "All expected five Besu targets were UP in every before/after snapshot."
-        if health.all_expected_targets_up
-        else "At least one snapshot had a missing or DOWN Besu target."
-    )
+    if health.all_expected_targets_up:
+        availability = (
+            "All expected five Besu targets were UP in every before/after snapshot."
+        )
+    elif health.all_targets_match_condition:
+        conditions = ", ".join(health.experiment_conditions) or "declared"
+        availability = (
+            "All expected Besu targets matched the declared validator "
+            f"condition in every snapshot ({conditions})."
+        )
+    else:
+        availability = (
+            "At least one snapshot did not match its declared Besu target condition."
+        )
     synchronization = (
-        "All monitored nodes reported synchronized in every snapshot."
+        "All active monitored nodes reported synchronized in every snapshot."
         if health.all_nodes_synchronized
-        else "At least one monitored node did not report synchronized."
+        else "At least one active monitored node did not report synchronized."
     )
     progress = (
         "Block heights progressed between before and after snapshots for "
@@ -791,6 +873,31 @@ def _parse_network_snapshot(
     )
 
 
+def _parse_network_experiment(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    raw_experiment = payload.get("experiment")
+    if raw_experiment is None:
+        return {}
+    if not isinstance(raw_experiment, dict):
+        raise ValueError("invalid network experiment metadata")
+
+    raw_allowed = raw_experiment.get("allowed_down_instances")
+    if not isinstance(raw_allowed, list) or not all(
+        isinstance(instance, str) and instance.strip()
+        for instance in raw_allowed
+    ):
+        raise ValueError("invalid network allowed_down_instances metadata")
+
+    return {
+        "experiment_condition": _required_str(
+            raw_experiment,
+            "experiment_condition",
+        ),
+        "allowed_down_instances": tuple(sorted(raw_allowed)),
+    }
+
+
 def _parse_metric_samples(
     metrics: dict[str, Any],
     key: str,
@@ -809,6 +916,45 @@ def _parse_metric_samples(
             )
         )
     return tuple(samples)
+
+
+def _snapshot_matches_condition(
+    snapshot: NetworkSnapshot,
+    *,
+    allowed_down_instances: tuple[str, ...],
+    expected_target_count: int,
+) -> bool:
+    by_instance = {
+        sample.instance: sample.value
+        for sample in snapshot.node_up
+    }
+    allowed_down = set(allowed_down_instances)
+    return (
+        len(by_instance) == expected_target_count
+        and allowed_down <= set(by_instance)
+        and all(
+            value == (0.0 if instance in allowed_down else 1.0)
+            for instance, value in by_instance.items()
+        )
+    )
+
+
+def _snapshot_active_nodes_synchronized(
+    snapshot: NetworkSnapshot,
+    *,
+    allowed_down_instances: tuple[str, ...],
+    expected_target_count: int,
+) -> bool:
+    allowed_down = set(allowed_down_instances)
+    active_samples = [
+        sample
+        for sample in snapshot.sync_status
+        if sample.instance not in allowed_down
+    ]
+    return (
+        len(active_samples) == expected_target_count - len(allowed_down)
+        and all(sample.value == 1.0 for sample in active_samples)
+    )
 
 
 def _snapshot_progressed(
@@ -903,6 +1049,55 @@ def _consistent_int(
         )
 
     return next(iter(values))
+
+
+def _consistent_experiment(
+    runs: list[dict[str, Any]],
+    scenario_name: str,
+) -> tuple[str | None, int | None, tuple[str, ...]]:
+    raw_experiments = [run.get("experiment") for run in runs]
+
+    if all(experiment is None for experiment in raw_experiments):
+        return None, None, ()
+    if any(experiment is None for experiment in raw_experiments):
+        raise ValueError(
+            f"scenario {scenario_name!r} has inconsistent experiment metadata"
+        )
+
+    parsed: set[tuple[str, int, tuple[str, ...]]] = set()
+    for raw_experiment in raw_experiments:
+        if not isinstance(raw_experiment, dict):
+            raise ValueError("invalid experiment metadata")
+
+        condition = _required_str(
+            raw_experiment,
+            "experiment_condition",
+        )
+        active_validators = _required_int(
+            raw_experiment,
+            "active_validators",
+        )
+        raw_allowed = raw_experiment.get("allowed_down_instances")
+        if not isinstance(raw_allowed, list) or not all(
+            isinstance(instance, str) and instance.strip()
+            for instance in raw_allowed
+        ):
+            raise ValueError("invalid allowed_down_instances metadata")
+
+        parsed.add(
+            (
+                condition,
+                active_validators,
+                tuple(sorted(raw_allowed)),
+            )
+        )
+
+    if len(parsed) != 1:
+        raise ValueError(
+            f"scenario {scenario_name!r} has inconsistent experiment metadata"
+        )
+
+    return next(iter(parsed))
 
 
 def _optional_float_values(

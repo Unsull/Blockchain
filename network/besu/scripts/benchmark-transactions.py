@@ -14,10 +14,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from blockchain_client.benchmark_export import export_run_bundle  # noqa: E402
+from blockchain_client.benchmark_models import BenchmarkExperimentMetadata  # noqa: E402
 from blockchain_client.benchmark_observer import (  # noqa: E402
     BenchmarkNetworkObservation,
     PrometheusObserver,
     write_network_observation,
+    write_prometheus_timeseries,
 )
 from blockchain_client.benchmark_runner import BenchmarkRunner  # noqa: E402
 from blockchain_client.benchmark_scenarios import (  # noqa: E402
@@ -40,6 +42,16 @@ DEFAULT_OUTPUT_DIRECTORY = Path(
 DEFAULT_ARTIFACT_PATH = Path(
     "out/EvidenceRegistryV3.sol/EvidenceRegistryV3.json"
 )
+
+EXPECTED_BESU_INSTANCES = (
+    "validator-1:9545",
+    "validator-2:9545",
+    "validator-3:9545",
+    "validator-4:9545",
+    "rpc-node:9545",
+)
+
+VALIDATOR_INSTANCES = frozenset(EXPECTED_BESU_INSTANCES[:4])
 
 
 def optional_int(
@@ -125,6 +137,24 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.getenv("WRITER_PRIVATE_KEY"),
     )
 
+    parser.add_argument(
+        "--allowed-down-instance",
+        action="append",
+        dest="allowed_down_instances",
+        default=[],
+        help=(
+            "Besu validator Prometheus instance required to be DOWN. "
+            "May be specified once for the supported 3/4 condition."
+        ),
+    )
+
+    parser.add_argument(
+        "--prometheus-step-seconds",
+        type=int,
+        default=15,
+        help="Prometheus query_range step; defaults to the 15s scrape interval.",
+    )
+
     return parser
 
 
@@ -149,6 +179,42 @@ def require_configuration(
             "missing required configuration: "
             + ", ".join(missing)
         )
+
+    if getattr(args, "prometheus_step_seconds", 15) <= 0:
+        raise ValueError("prometheus-step-seconds must be positive")
+
+    build_experiment_metadata(
+        tuple(getattr(args, "allowed_down_instances", ()) or ())
+    )
+
+
+def build_experiment_metadata(
+    allowed_down_instances: tuple[str, ...],
+) -> BenchmarkExperimentMetadata:
+    """Build and validate the supported 4/4 or 3/4 validator condition."""
+
+    allowed_down = tuple(sorted(set(allowed_down_instances)))
+    unknown = set(allowed_down) - VALIDATOR_INSTANCES
+
+    if unknown:
+        raise ValueError(
+            "allowed-down instance must be a known validator: "
+            + ", ".join(sorted(unknown))
+        )
+    if len(allowed_down) > 1:
+        raise ValueError(
+            "benchmark supports either 4/4 validators or one allowed-down "
+            "validator for the 3/4 condition"
+        )
+
+    active_validators = 4 - len(allowed_down)
+    return BenchmarkExperimentMetadata(
+        experiment_condition=(
+            f"{active_validators}/4_validators_active"
+        ),
+        active_validators=active_validators,
+        allowed_down_instances=allowed_down,
+    )
 
 
 def select_plans(
@@ -211,6 +277,12 @@ def run_plan(
     """Run one scenario for all configured repetitions."""
 
     exported_paths: list[Path] = []
+    allowed_down_instances = tuple(
+        getattr(args, "allowed_down_instances", ()) or ()
+    )
+    experiment = build_experiment_metadata(
+        allowed_down_instances
+    )
 
     for repetition in range(
         1,
@@ -228,7 +300,11 @@ def run_plan(
         )
 
         before = observer.capture()
-        observer.validate_snapshot(before)
+        observer.validate_snapshot(
+            before,
+            expected_instances=EXPECTED_BESU_INSTANCES,
+            allowed_down_instances=experiment.allowed_down_instances,
+        )
 
         runner = BenchmarkRunner(client)
 
@@ -239,7 +315,17 @@ def run_plan(
 
         after = observer.capture()
 
-        observer.validate_snapshot(after)
+        observer.validate_snapshot(
+            after,
+            expected_instances=EXPECTED_BESU_INSTANCES,
+            allowed_down_instances=experiment.allowed_down_instances,
+        )
+
+        time_series = observer.capture_range(
+            result.started_at,
+            result.finished_at,
+            step_seconds=getattr(args, "prometheus_step_seconds", 15),
+        )
 
         summary = summarize_run(result)
 
@@ -247,6 +333,7 @@ def run_plan(
             result,
             summary,
             args.output_directory,
+            experiment=experiment,
         )
 
         network_path = write_network_observation(
@@ -255,7 +342,14 @@ def run_plan(
                 prometheus_url=args.prometheus_url,
                 before=before,
                 after=after,
+                experiment=experiment,
             ),
+            args.output_directory,
+        )
+
+        time_series_path = write_prometheus_timeseries(
+            result.run_id,
+            time_series,
             args.output_directory,
         )
 
@@ -265,6 +359,7 @@ def run_plan(
                 paths.transactions_csv,
                 paths.summary_json,
                 network_path,
+                time_series_path,
             ]
         )
 
@@ -336,6 +431,7 @@ def main(
     except (
         BlockchainClientError,
         OSError,
+        RuntimeError,
         ValueError,
     ) as exc:
         print(

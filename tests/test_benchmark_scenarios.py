@@ -145,3 +145,24 @@ def test_load_scenario_plans_rejects_unknown_field(
         match="unknown field",
     ):
         load_scenario_plans(path)
+
+
+def test_research_100_scenarios_are_separate_and_valid() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "network"
+        / "besu"
+        / "benchmarks"
+        / "scenarios-research-100.json"
+    )
+
+    plans = load_scenario_plans(path)
+
+    assert [plan.scenario.name for plan in plans] == [
+        "evidence-c100",
+        "access-c100",
+    ]
+    assert all(plan.scenario.transaction_count == 100 for plan in plans)
+    assert all(plan.scenario.concurrency == 100 for plan in plans)
+    assert all(plan.scenario.confirmations == 1 for plan in plans)
+    assert all(plan.repetitions == 3 for plan in plans)

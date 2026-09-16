@@ -1,7 +1,8 @@
 """Tests for Prometheus benchmark network observation."""
 
+import csv
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,17 @@ from blockchain_client.benchmark_observer import (
     BenchmarkNetworkSnapshot,
     PrometheusObserver,
     PrometheusSample,
+    PrometheusTimeSeriesSample,
     write_network_observation,
+    write_prometheus_timeseries,
+)
+
+EXPECTED_INSTANCES = (
+    "validator-1:9545",
+    "validator-2:9545",
+    "validator-3:9545",
+    "validator-4:9545",
+    "rpc-node:9545",
 )
 
 
@@ -25,7 +36,7 @@ def make_snapshot(
 
     node_samples = tuple(
         PrometheusSample(
-            instance=f"node-{index}:9545",
+            instance=EXPECTED_INSTANCES[index - 1],
             value=value,
         )
         for index, value in enumerate(
@@ -193,7 +204,52 @@ def test_validate_snapshot_accepts_five_up_nodes() -> None:
     observer.validate_snapshot(
         snapshot,
         expected_nodes=5,
+        expected_instances=EXPECTED_INSTANCES,
     )
+
+
+def test_validate_snapshot_accepts_declared_three_of_four_condition() -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+    snapshot = make_snapshot(node_values=(1.0, 1.0, 1.0, 0.0, 1.0))
+
+    observer.validate_snapshot(
+        snapshot,
+        expected_instances=EXPECTED_INSTANCES,
+        allowed_down_instances=("validator-4:9545",),
+    )
+
+
+def test_validate_snapshot_rejects_allowed_down_instance_that_is_up() -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+
+    with pytest.raises(RuntimeError, match="still UP"):
+        observer.validate_snapshot(
+            make_snapshot(),
+            expected_instances=EXPECTED_INSTANCES,
+            allowed_down_instances=("validator-4:9545",),
+        )
+
+
+def test_validate_snapshot_rejects_unexpected_validator_down() -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+
+    with pytest.raises(RuntimeError, match="validator-3:9545"):
+        observer.validate_snapshot(
+            make_snapshot(node_values=(1.0, 1.0, 0.0, 0.0, 1.0)),
+            expected_instances=EXPECTED_INSTANCES,
+            allowed_down_instances=("validator-4:9545",),
+        )
+
+
+def test_validate_snapshot_rejects_rpc_down_in_degraded_condition() -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+
+    with pytest.raises(RuntimeError, match="rpc-node:9545"):
+        observer.validate_snapshot(
+            make_snapshot(node_values=(1.0, 1.0, 1.0, 0.0, 0.0)),
+            expected_instances=EXPECTED_INSTANCES,
+            allowed_down_instances=("validator-4:9545",),
+        )
 
 
 def test_validate_snapshot_rejects_down_node() -> None:
@@ -242,6 +298,23 @@ def test_validate_snapshot_rejects_wrong_node_count() -> None:
         observer.validate_snapshot(
             snapshot,
             expected_nodes=5,
+        )
+
+
+def test_validate_snapshot_rejects_unknown_or_missing_targets() -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+    snapshot = make_snapshot()
+    samples = list(snapshot.metrics["node_up"])
+    samples[-1] = PrometheusSample("unexpected:9545", 1.0)
+    changed = BenchmarkNetworkSnapshot(
+        captured_at=snapshot.captured_at,
+        metrics={**snapshot.metrics, "node_up": tuple(samples)},
+    )
+
+    with pytest.raises(RuntimeError, match="unexpected Besu Prometheus targets"):
+        observer.validate_snapshot(
+            changed,
+            expected_instances=EXPECTED_INSTANCES,
         )
 
 
@@ -388,3 +461,119 @@ def test_write_network_observation_replaces_existing_file(
     )
 
     assert not temporary_path.exists()
+
+
+def test_query_range_preserves_labels_and_uses_requested_interval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_url: list[str] = []
+
+    def fake_urlopen(url: str, *, timeout: float) -> BytesIO:
+        del timeout
+        captured_url.append(url)
+        payload = {
+            "status": "success",
+            "data": {
+                "resultType": "matrix",
+                "result": [
+                    {
+                        "metric": {
+                            "instance": "validator-1:9545",
+                            "area": "heap",
+                        },
+                        "values": [
+                            [1_786_000_000, "100"],
+                            [1_786_000_015, "110"],
+                        ],
+                    }
+                ],
+            },
+        }
+        return BytesIO(json.dumps(payload).encode("utf-8"))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+    start = datetime.fromtimestamp(1_786_000_000, tz=UTC)
+
+    samples = observer._query_range(
+        "jvm_memory_used_bytes",
+        'jvm_memory_used_bytes{job="besu"}',
+        start=start,
+        end=start + timedelta(seconds=15),
+        step_seconds=15,
+    )
+
+    assert len(samples) == 2
+    assert samples[0].labels["area"] == "heap"
+    assert samples[1].value == 110.0
+    assert "/api/v1/query_range?" in captured_url[0]
+    assert "step=15" in captured_url[0]
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"resultType": "matrix", "result": "invalid"},
+        {"resultType": "vector", "result": []},
+    ],
+)
+def test_query_range_rejects_malformed_response(
+    monkeypatch: pytest.MonkeyPatch,
+    data: dict[str, object],
+) -> None:
+    def fake_urlopen(url: str, *, timeout: float) -> BytesIO:
+        del url
+        del timeout
+        return BytesIO(
+            json.dumps({"status": "success", "data": data}).encode("utf-8")
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+    now = datetime.now(UTC)
+
+    with pytest.raises(RuntimeError, match="invalid Prometheus range"):
+        observer._query_range(
+            "node_up",
+            'up{job="besu"}',
+            start=now,
+            end=now,
+            step_seconds=15,
+        )
+
+
+def test_capture_range_rejects_empty_metric_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = PrometheusObserver("http://127.0.0.1:9090")
+    monkeypatch.setattr(observer, "_query_range", lambda *args, **kwargs: ())
+    now = datetime.now(UTC)
+
+    with pytest.raises(RuntimeError, match="returned no samples"):
+        observer.capture_range(now, now)
+
+
+def test_write_prometheus_timeseries_csv_has_required_columns(
+    tmp_path: Path,
+) -> None:
+    sample = PrometheusTimeSeriesSample(
+        timestamp=datetime(2026, 8, 14, 12, 0, tzinfo=UTC),
+        metric_name="jvm_memory_used_bytes",
+        instance="validator-1:9545",
+        labels={"instance": "validator-1:9545", "area": "heap"},
+        value=1024.0,
+    )
+
+    path = write_prometheus_timeseries("run-001", (sample,), tmp_path)
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert path.name == "metrics-timeseries-run-001.csv"
+    assert rows[0].keys() == {
+        "timestamp",
+        "metric_name",
+        "instance",
+        "labels",
+        "value",
+    }
+    assert json.loads(rows[0]["labels"])["area"] == "heap"

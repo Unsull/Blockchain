@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from blockchain_client.benchmark_models import (
+    BenchmarkExperimentMetadata,
     BenchmarkRunResult,
     BenchmarkSummary,
     BenchmarkTransactionResult,
@@ -27,6 +28,8 @@ def export_run_bundle(
     run: BenchmarkRunResult,
     summary: BenchmarkSummary,
     directory: Path,
+    *,
+    experiment: BenchmarkExperimentMetadata | None = None,
 ) -> BenchmarkExportPaths:
     """Export raw run, transaction CSV, and summary JSON."""
 
@@ -52,7 +55,7 @@ def export_run_bundle(
 
     _write_json(
         paths.run_json,
-        _run_payload(run),
+        _run_payload(run, experiment=experiment),
     )
 
     _write_transactions_csv(
@@ -60,18 +63,21 @@ def export_run_bundle(
         run,
     )
 
-    _write_json(
-        paths.summary_json,
-        asdict(summary),
-    )
+    summary_payload = asdict(summary)
+    if experiment is not None:
+        summary_payload["experiment"] = asdict(experiment)
+
+    _write_json(paths.summary_json, summary_payload)
 
     return paths
 
 
 def _run_payload(
     run: BenchmarkRunResult,
+    *,
+    experiment: BenchmarkExperimentMetadata | None = None,
 ) -> dict[str, Any]:
-    return {
+    payload: dict[str, Any] = {
         "run_id": run.run_id,
         "scenario": asdict(run.scenario),
         "repetition": run.repetition,
@@ -83,6 +89,11 @@ def _run_payload(
             for transaction in run.transactions
         ],
     }
+
+    if experiment is not None:
+        payload["experiment"] = asdict(experiment)
+
+    return payload
 
 
 def _transaction_payload(

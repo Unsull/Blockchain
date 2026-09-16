@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
 import json
+from argparse import Namespace
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -67,8 +70,9 @@ def make_summary(
     submitted: int = 20,
     successful: int = 20,
     failed: int = 0,
+    experiment_condition: str | None = None,
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "run_id": f"{scenario_name}-{repetition}",
         "scenario_name": scenario_name,
         "operation": operation,
@@ -94,6 +98,20 @@ def make_summary(
         "gas_total": int(gas_mean * successful),
         "gas_mean": gas_mean,
     }
+
+    if experiment_condition is not None:
+        active_validators = 3 if experiment_condition.startswith("3/4") else 4
+        payload["experiment"] = {
+            "experiment_condition": experiment_condition,
+            "active_validators": active_validators,
+            "allowed_down_instances": (
+                ["validator-4:9545"]
+                if active_validators == 3
+                else []
+            ),
+        }
+
+    return payload
 
 
 def test_aggregate_summaries() -> None:
@@ -251,6 +269,29 @@ def test_network_analysis_detects_down_and_unsynchronized_node(
     assert health.all_observations_progressed is False
 
 
+def test_network_analysis_accepts_declared_down_validator(tmp_path: Path) -> None:
+    payload = make_network_observation(
+        up_values=(1, 1, 1, 1, 0),
+    )
+    payload["experiment"] = {
+        "experiment_condition": "3/4_validators_active",
+        "active_validators": 3,
+        "allowed_down_instances": ["validator-4:9545"],
+    }
+
+    (tmp_path / "network-run-1.json").write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+    health = analyze_network_observations(
+        load_network_observations(tmp_path)
+    )
+
+    assert health.all_expected_targets_up is False
+    assert health.all_targets_match_condition is True
+    assert health.all_nodes_synchronized is True
+
+
 def test_validate_expected_matrix() -> None:
     summaries: list[dict[str, object]] = []
 
@@ -364,3 +405,67 @@ def test_exports(
     assert "All expected five Besu targets were UP" in report
     assert "highest observed throughput" in report
     assert "maximum TPS" not in report
+
+
+def test_custom_c100_dataset_analyzes_with_skip_matrix_validation(
+    tmp_path: Path,
+) -> None:
+    for scenario_name, operation in (
+        ("evidence-c100", "recordEvidence"),
+        ("access-c100", "recordAccess"),
+    ):
+        for repetition in range(1, 4):
+            payload = make_summary(
+                scenario_name=scenario_name,
+                operation=operation,
+                concurrency=100,
+                repetition=repetition,
+                throughput=1.0,
+                submitted=100,
+                successful=100,
+                experiment_condition="4/4_validators_active",
+            )
+            (tmp_path / f"summary-{scenario_name}-{repetition}.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+
+    module = _load_analyzer_script()
+    paths = module.execute(
+        Namespace(
+            result_directory=tmp_path,
+            output_directory=None,
+            skip_matrix_validation=True,
+        )
+    )
+
+    assert [path.name for path in paths] == [
+        "aggregate.csv",
+        "aggregate.json",
+        "benchmark-report.md",
+    ]
+    aggregate = json.loads(paths[1].read_text(encoding="utf-8"))
+    assert {item["scenario_name"] for item in aggregate} == {
+        "evidence-c100",
+        "access-c100",
+    }
+    assert all(item["active_validators"] == 4 for item in aggregate)
+
+
+def _load_analyzer_script() -> ModuleType:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "network"
+        / "besu"
+        / "scripts"
+        / "analyze-benchmark-results.py"
+    )
+    specification = importlib.util.spec_from_file_location(
+        "benchmark_analysis_script",
+        path,
+    )
+    assert specification is not None
+    assert specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    return module
